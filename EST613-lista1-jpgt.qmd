@@ -1,0 +1,1269 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA <br> LISTA DE EXERCÍCIOS 01"
+author: "João Paulo Gusmão Teixeira (64316)"
+format:
+    html:
+        code-overflow: wrap
+
+embed-resources: true
+---
+
+```{=html}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+
+.resposta {
+  font-family: 'Architects Daughter', cursive;
+  font-size: 1.2rem;
+}
+
+.diagcell {
+  background: linear-gradient(to top right, transparent calc(50% - 1px), #dee2e6 calc(50% - 1px), #dee2e6 calc(50% + 1px), transparent calc(50% + 1px));
+  position: relative;
+  min-width: 100px;
+  height: 50px;
+}
+.diag-bottom {
+  position: absolute;
+  bottom: 2px;
+  left: 5px;
+}
+.diag-top {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+}
+
+</style>
+```
+
+
+
+
+
+```{r setup, include=FALSE}
+# Bibliotecas
+
+getwd()
+
+pacotes <- c("tidyverse", "readr", "knitr", "kableExtra","formatR")
+
+
+for (p in pacotes) {
+    if (!require(p, character.only = TRUE)) {
+        install.packages(p)
+        library(p, character.only = TRUE)
+    }
+}
+
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center",
+    tidy.opst = list(width.cutoff = 60),
+    tidy = TRUE
+)
+```
+
+
+::: {.pergunta}
+ 1. Considere uma partição do espaço amostral e um evento tal que . Enuncie o Teorema de Bayes: $$P(A_k|B) = \frac{P(B|A_k)P(A_k)}{\sum_\limits{i=1}^{n} P(B|A_i) P(A_i) }, i = 1, ..., k, ..., n$$ Identifique e explique o papel de:
+
+
+i. [$P(A_k)$]{.pergunta}
+
+ii. [$P(B|A_k)$]{.pergunta}
+
+iii. [$\sum_\limits{i=1}^{n} P(B|A_i) P(A_i)$]{.pergunta}
+
+iv. [$P(A_k|B)$]{.pergunta}
+
+:::
+
+## Resposta 01
+
+::: {.resposta}
+i. $P(A_k)$ representa a probabilidade a priori, ou seja, a probabilidade de ocorrência do evento $A_k$ sem se ter o conhecimento do evento $B$
+
+ii. $P(B|A_k)$  representa a probabilidade condicional , ou seja, a contribuição da ocorrência do evento $A_k$ para a ocorrência do evento $B$. Pode ser chamada também de função de verossimilhança.
+
+iii. $\sum_\limits{i=1}^{n} P(B|A_i) P(A_i)$ indica que é usada todas as probabilidades a priori para calcular a probabilidade total de ocorrência do evento $B$ no espaço amostral. Nesse sentido, cada termo calcula a probabilidade da interseção $P(B \cap A)$, ou seja, a chance de se estar no cenário $A_i$ e o evendo $B$ acontecer nele. Por fim, pode-se entender que existe um efeito normalizador.
+
+iv. $P(A_k|B)$ representa a contribuição da ocorrência do evento $B$ para a ocorrência do evento $A_k$. Pode ser chamado também de probailidade a posteriori, que é atualizada após receber informação sobre a ocorrência do evento $B$.
+
+:::
+
+::: {.pergunta}
+2. Considere um teste utilizado para auxiliar no diagnóstico de diabetes em determinada população. Sabe-se que:
+
+- **6%** dos indivíduos dessa população têm diabetes;
+
+- entre os indivíduos que têm diabetes, o teste apresenta resultado positivo em 90% dos casos (**sensibilidade**);
+
+- entre os indivíduos que não têm diabetes, o teste apresenta resultado positivo em **5%** dos casos (**taxa de falsos positivos**).
+
+Considere os eventos:
+
+$D =$ \{*o indivíduo tem diabetes*\}
+
+$\hat{D} =$ \{*o indivíduos **não** tem diabetes*\}
+
+$T^+ =$ \{*o teste apresenta resultado **positivo***\}
+
+$T^- =$ \{*o teste apresenta resultado **negativo***\}
+
+a) Determine a probabilidade de o teste apresentar **resultado negativo, dado que o indivíduo tem diabetes**, isto é, $P(T^-|D)$.
+
+b) Sabendo que um indivíduo apresentou **resultado negativo no teste**, determine a probabilidade de que ele **tenha diabetes**, isto é, $P(D|T^-)$.
+
+c) Compare as probabilidades $P(D)$ e $P(D|T^-)$ e interprete, no contexto do problema, **como a observação de um resultado negativo modifica a probabilidade inicialmente atribuída à ocorrência de diabetes**.
+:::
+
+## Resposta 02
+
+::: {.resposta}
+Primeiramente, armazenaremos as informações do problema.
+:::
+
+```{r Resposta 2} 
+prevDiab <- 0.06 # 6% da população têm diabetes P(D)
+
+sensib <- 0.9 # entre os que tem diabetes, o resultado consegue detectar em 90% das vezes P(T+ | D)
+falsonegativo <- 1 - sensib # o teste não detecta a doença em 10% das vezes P(T-|D)
+
+falsopositivo <- 0.05 # o teste detecta a doença em quem não tem em 5% das vezes. P(T+|\hat{D})
+especi <- 1 - falsopositivo # o teste dá negativo para uma pessoa saudável em 95% das vezes P(T- | \hat{D})
+
+```
+
+::: {.resposta}
+Agora podemos proceder aos cálculos solicitados
+:::
+
+### Resposta 02.a) $P(T^-|D)$
+
+``` {r Resposta 2a}
+#| collapse: true
+#| comment: ""
+
+# a. P(T^-|D)
+# P(T^- |D) = 1 - P(T+ |D)
+
+# Já calculado no chunck Resposta 2, sendo esse o falso negativo.
+
+cat("\n# P(T^-|D) = ", falsonegativo, sep="")
+
+```
+
+
+::: {.resposta}
+Portanto, a probabilidade é $P(T^-|D) =$ `r falsonegativo`.
+:::
+
+### Resposta 02.b) $P(D|T^-)$
+
+``` {r Resposta 2b}
+#| collapse: true
+#| comment: ""
+
+# P(D|T-) = P(T-|D)P(D) / P(T-)
+
+# Precisaremos calcular a possibilidade P(T-)
+
+# P(T-) = P(T-|D)P(D) + P(T-|\hat{D})P(\hat{D})
+
+prob_Nterdiab = falsopositivo *  prevDiab + especi * (1-prevDiab)
+
+cat("Probabilidade de não ter a doença: ","P(T-) = ", prob_Nterdiab, sep="")
+
+# Agora, podemos calcular o solicitado
+
+prob2b <- (falsonegativo * prevDiab) / (prob_Nterdiab)
+cat("Prob ter diabetes sendo que o resultado deu negativo: ", prob2b, sep="")
+
+```
+
+::: {.resposta}
+Dado que o indivíduos fez o teste e esse deu negativo, há uma probabilidade de `r round(prob2b,4)` de ele ter a doença.
+:::
+
+### Resposta 2c
+
+::: {.resposta}
+A prevalência da diabetes na população estudada é de 6%. Antes da realização de um teste, é como se um indivíduos tivesse 6% de chance de apresentar diabetes. Após a realização de um teste, o qual possui 90% de eficácia (sensibilidade), a nova probabilidade de um indivíduo ter a doença reduz substancialmente para `r round(prob2b,4)*100`%. Isso mostra que o conhecimento a respeito de algo pode influenciar nas probabilidades de calculamos.
+:::
+
+
+::: {.pergunta}
+3. Em uma determinada cidade, os eleitores foram classificados em três grupos etários:
+
+- **20%** são jovens, com idade entre 18 e 30 anos;
+
+- **50%** são adultos, com idade entre 31 e 50 anos;
+
+- **30%** são idoso, com 51 anos ou mais.
+
+Uma pesquisa eleitoral indicou que:
+
+- **60% dos jovens** apoiam determinado candidato;
+
+- **40% dos adultos** apoiam esse candidato;
+
+- **20% dos idosos** apoiam esse candidato.
+
+Considere os eventos:
+
+$J = $ *{o eleitor é **jovem**}*
+
+$A = $ *{o eleitor é **adulto**}*
+
+$I = $ *{o eleitor é **idoso**}*
+
+$C = $ *{o eleitor apoia o candidato}*
+
+Com base nas informações, determine:
+
+**a)** A Probabilidade de um eleitor escolhido aleatoriamente **apoias o candidato.**
+
+**b)** Sabendo que um eleitor **apoia o candidato**, determine a probabilidade de que ele seja **jovem**.
+
+**c)** Sabendo que um eleitor **não apoia o candidato**, determine a probabilidade de que ele seja **idoso**.
+
+**d)** Compare $P(J)$ com $P(J|C)$ e $P(I)$ com $P(I|\hat{C})$. Interprete como a informação sobre o apoio, ou não, ao candidato modifica as probabilidades inicialmente atribuídas aos grupos etários.
+
+:::
+
+## Resposta 03
+
+::: {.resposta}
+Tal qual no exercício anterior, armazenaremos as informações do problema.
+:::
+
+```{r Resposta 3}
+propjovem = .2 # Proporção de jovens na cidade
+propadulto = .5 # Proporção de adultos na cidade
+propidoso = .3 # Proporção de idoso na cidade
+
+apoiojovem = .6 # Apoio de jovens ao candidato X
+apoioadulto = .4 # '' '' adultos '' '' 
+apoioidoso =.2 #  '' '' idosos  '' '' 
+
+
+
+```
+
+### Resposta 03a
+
+```{r Resposta 3a}
+#| collapse: true
+#| comment: ""
+
+# Prob eleitor escolhido aleatoriamente apoiar o candidato
+
+# P(C) = P(C|J)*P(J) + P(C|A)*P(A) + P(C|I)*P(I)
+
+prob_apoiar <- (apoiojovem * propjovem) + (apoioadulto * propadulto) + (apoioidoso * propidoso)
+
+```
+
+::: {.resposta}
+A probabilidade de um eleitor selecionado ao acaso apoiar o candidato é de `r prob_apoiar * 100`% (P(C) = `r prob_apoiar`).
+:::
+
+### Resposta 03b
+
+```{r Resposta 3b}
+#| collapse: true
+#| comment: ""
+
+# Sei que um eleitor apoia o candidato -> chance de ser jovem
+
+# P(J|C) = P(C|J)P(J) /P(C) 
+
+prob_serjovem <- (apoiojovem * propjovem) / prob_apoiar
+
+cat("P(J|C) =", round(prob_serjovem, 4))
+```
+
+::: {.resposta}
+
+Sabendo que o eleitor apoia o candidato, a probabilidade de ele ser jovem é de aproximadamente `r round(prob_serjovem * 100, 2)`% ($P(J|C) \approx$ `r round(prob_serjovem, 4)`).
+
+:::
+
+
+### Resposta 3c
+
+```{r Resposta 3c}
+#| collapse: true
+#| comment: ""
+
+# Sei que um eleitor não apoia o candidato -> chance de ser idoso
+# Estou usando o ! tal qual na programação, mas em aula vimos como \hat(C)
+# P(I|!C) = P(!C|I)P(I) /P(!C) 
+
+#P(!C) = 1 - P(C)
+prob_naoapoiar <-  1 - prob_apoiar
+
+#P(!C|I) = 1 - P(C|I)
+prob_nao_apoio_idoso <- 1 - apoioidoso 
+
+#P(I|!C) = P(!C|I) * P(I) / P(!C)
+prob_seridoso <- (prob_nao_apoio_idoso * propidoso) / prob_naoapoiar
+
+cat("P(J|!C) =", round(prob_seridoso, 4))
+```
+
+::: {.resposta}
+
+Sabendo que o eleitor não apoia o candidato, a probabilidade de ele ser idoso é de aproximadamente `r round(prob_seridoso * 100, 2)`% ($P(J|C) \approx$ `r round(prob_seridoso, 4)`).
+
+:::
+
+### Resposta 3d
+
+::: {.resposta}
+
+De início, imaginamos que a chance de alguém ser idoso, jovem ou adulto se dá exclusivamente pela proporção da população que está em cada um desses estratos. Todavia, ao descobrir uma nova informação, seja de que o eleitor apoia um candidato ou que não apoia, esse conhecimento permite alterar as probabilidades além daquelas relativas tão somente à proporção. Isso é pode ser percebido ao analisar dois cenários:
+
+1) P(J) = 20% (proporção da população), mas sabendo que um eleitor apoia o candidato, a probabilidade de ser jovem passa para P(J|C) = `r round(prob_serjovem,4) * 100`%
+
+2) P(I) = 30% (proporção da população), mas sabendo que um eleitor não apoia o candidato, a probabilidade de ser idoso passa para P(I/!C) = `r round(prob_seridoso,4)*100`%.
+:::
+
+::: {.pergunta}
+
+4. Uma empresa de alimentos processa frutos provenientes de duas fazendas distintas. A Fazenda A é responsável por 40% dos frutos processados, enquanto a Fazenda B contribui com os 60% restantes.
+
+Dados históricos indicam que:
+
+-  6% dos frutos provenientes da Fazenda A estão maduros e prontos para consumo;
+
+-  8% dos frutos provenientes da Fazenda B estão maduros e prontos para consumo.
+
+Considere os eventos:
+
+$$A = {\textit{o fruto é proveniente da Fazenda A}}$$
+
+$$B = {\textit{o fruto é proveniente da Fazenda B}}$$
+
+$$M_i = {\textit{o i − ésimo fruto selecionado está maduro e pronto para consumo}}$$
+
+Responda:
+
+a) Determine a probabilidade de um fruto selecionado aleatoriamente **não estar maduro
+e pronto para consumo**.
+
+b) Sabendo que o primeiro fruto selecionado está **maduro e pronto para consumo**,
+determine a probabilidade de que ele seja proveniente da **Fazenda A**.
+
+c) Considere agora que dois frutos são selecionados de um mesmo lote, cuja fazenda de
+origem é desconhecida. Suponha que, condicionada à fazenda de origem, a condição de
+maturação dos frutos possa ser considerada independente.
+
+Sabendo que o **primeiro fruto selecionado está maduro** e o **segundo fruto não está
+maduro**, determine
+
+$$P(A|M_1 \cap \bar{M}_2)$$
+
+Considere as duas formas de atualização apresentadas a seguir.
+
+**i. Atualização conjunta das duas informações**
+
+$$P(A|M_1 \cap \bar{M}_2) = \frac{P(M_1 ∩ \bar{M}_2|A)P(A)}{  P(M_1 \cap \bar{M}_2|A)P(A) + P(M_1 \cap \bar{M}_2|B)P(B)}$$
+
+e, utilizando a independência condicional,
+
+$$P(A|M_1 \cap \bar{M}_2) =  \frac{P(M_1|A)P(\bar{M}_2|A)P(A)}{P(M_1|A)P(\bar{M}_2|A)P(A) + P(M_1|B)P(\bar{M}_2|B)P(B)}$$
+
+**ii. Atualização sequencial das informações**
+
+Primeiramente, considere a informação e, em seguida, incorpore a informação:
+
+$$P(A|M_1 \cap \bar{M}_2) = \frac{P(A|M_1)P(\bar{M}_2|A)}{P(A|M_1)P(\bar{M}_2|A) + P(B|M_1)P(\bar{M}_2|B)}$$
+
+
+Calcule e justifique por que as abordagens i e ii conduzem ao mesmo resultado e interprete essa equivalência no contexto do Teorema de Bayes como uma regra de
+atualização sequencial da informação. Não é necessário demonstrar algebricamente a equivalência.
+
+d) Sob o mesmo contexto do item anterior, suponha agora que o **primeiro fruto selecionado não esteja maduro** e o **segundo esteja maduro e pronto para consumo**. Determine a probabilidade de que os frutos sejam provenientes da **Fazenda A**, isto é, 
+
+$$P(A|\bar{M}_1 \cap M_2)$$
+
+Compare essa probabilidade com
+
+$$P(A|M_1 \cap \hat{M}_2)$$
+
+obtida no item c. As duas probabilidades são iguais? **Justifique o resultado**.
+
+:::
+
+## Resposta 04
+
+::: {.resposta}
+
+Como boa prática, vamos armazenar as informações que temos para posterior utilização.
+
+:::
+
+``` {r Resposta 4}
+# Dados das fazendas
+
+# fruto veio de qual fazenda?
+A <- naoB <- 0.4
+B <- naoA <- 0.6
+
+# dados históricos de qualidade
+# Mi - fruto i estar maduro ou nao
+MA <- 0.06
+naoMA <- 1 - MA
+MB <- 0.08
+naoMB <- 1 - MB
+
+```
+
+::: {.resposta}
+Agora, vamos às letras.
+:::
+
+### Resposta 4a
+
+```{r Resposta 4a}
+#| collapse: true
+#| comment: ""
+
+# Prob fruto aleatorio não estar maduro
+
+# P(!Mi) = P(!MI|A)*P(A) + P(!M|B)*P(B)
+
+naoMi <- (naoMA * A) + (naoMB * B)
+
+cat(naoMi)
+
+```
+
+
+::: {.resposta}
+A probabilidade de um fruto selecionado aleatoriamente não estar maduro é de r prob_naoMi * 100% ($P(\hat{M}) = `r naoMi`$).
+:::
+
+### Resposta 4b
+
+```{r Resposta 4b}
+#| collapse: true
+#| comment: ""
+
+# Sei que o primeiro fruto está maduro - veio de A?
+
+# P(A|Mi) = P(Mi|A)*P(A) / P(Mi)
+
+Mi <- 1 - naoMi
+
+A_dado_Mi <- (MA * A) / Mi
+
+cat("P(não M) =", A_dado_Mi)
+
+```
+
+::: {.resposta}
+
+Sabendo que o primeiro fruto está maduro, a probabilidade de ter vindo da Fazenda A é de aproximadamente `r round(A_dado_Mi * 100, 2)`% [$P(A|M_1) = \frac{1}{3} \approx$ `r round(A_dado_Mi, 4)`].
+
+:::
+
+### Resposta 4c
+
+#### Abordagem 01: atualização conjunta
+
+``` {r Resposta 4c1}
+#| collapse: true
+#| comment: ""
+# --- Abordagem 1: atualização conjunta ---
+
+# Por independência condicional:
+# P(A|M1 inters naoM2) = P(M1|A) * P(naoM2|A) * P(A) / [ P(M1|A)P(naoM2|A)*P(A) + P(M1|B)*P(naoM2|B)*P(B)]
+
+numerador_4c1 <- MA * naoMA * A
+denominador_4c1 <- numerador_4c1 + MB * naoMB * B
+
+AM1naoM2_conjunta <- numerador_4c1 / denominador_4c1
+
+cat("i.   P(A | M1, naoM2)   =", round(AM1naoM2_conjunta, 4), "\n")
+```
+
+#### Abordagem 02: atualização sequencial
+
+```{r Resposta 4c2}
+#| collapse: true
+#| comment: ""
+
+#--- Abordagem 2: atualização sequencial ---
+
+# P(A|M1 inter naoM2) = P(A|M1)P(naoM2|A)  /  P(A|M1)P(naoM2|A) + P(B|M1)P(naoM2|B)
+
+B_dado_Mi = 1 - A_dado_Mi
+
+AM1naoM2_sequencial <- A_dado_Mi * naoMA / (A_dado_Mi * naoMA + B_dado_Mi * naoMB)
+
+
+
+cat("ii.  P(A | M1, não M2) [Sequencial] =", round(AM1naoM2_sequencial, 4), "\n")
+
+```
+
+::: {.resposta}
+
+Ambas as abordagens resultam  em uma $P(A \mid M_1, \hat{M}_2) \approx$ `r round(AM1naoM2_sequencial * 100, 2)`$%$, pois o Teorema de Bayes possui a propriedade de invariância à ordem de agregação dos dados sob independência condicional.
+
+Na atualização sequencial, a distribuição a posteriori obtida após a primeira observação ($M_1$) torna-se a distribuição a priori da observação seguinte ($\hat{M}_2$).Isso evidencia o aprendizado bayesiano, seja ele feito ao calcular em conjunto ou em sequência.
+
+:::
+
+### Respsota 4d
+
+``` {r Resposta 4d}
+#| collapse: true
+#| comment: ""
+
+# P(A | M1 inter M2) = P(A|naoM1) * P(M2|A) / [P(A|naoM1) * P(M2|A) + P(B|naoM1)*P(M2|B)
+
+#P(A|naoM1) = P(naoM1|A)*P(A) / P(naoM1)
+A_dado_naoM1 <- (naoMA * A) / naoMi
+
+B_dado_naoM1 <- 1 - A_dado_naoM1
+
+AnaoM1M2_sequencial <- A_dado_naoM1 * MA / (A_dado_naoM1 * MA + B_dado_naoM1 * MB)
+
+
+cat("P(A | não M1, M2) =", round(AnaoM1M2_sequencial, 4))
+```
+
+::: {.callout-note}
+## Comparação propabilidades
+
+Item 4c - $P(A|M_1 \cap \hat{M}_2)$ = `r round(AM1naoM2_conjunta,4)`
+
+Item 4d - $P(A|\hat{M}_1 \cap M_2)$ = `r round(AnaoM1M2_sequencial, 4)`
+
+:::
+
+::: {.resposta}
+
+As probabilidades $P(A|M_1 \cap \hat{M}_2) = P(A|\hat{M}_1 \cap M_2) = 0,3381$ são iguais, pois há independência da variável resposta, ou seja, os fritps são i.i.d (independentes e identicamente distribuídos). Então $P(M_1, \hat{M}_2 \mid A) = P(M_1 \mid A) \cdot P(\hat{M}_2 \mid A) = P(\hat{M}_1 \mid A) \cdot P(M_2 \mid A) = P(\hat{M}_1, M_2 \mid A)$. O Mesmo vale para a fazenda B. 
+
+:::
+
+::: {.pergunta}
+
+5. Considere as seguintes variáveis aleatórias observadas em diferentes estudos:
+
+-  X = número de plantas que apresentam determinada doença em uma parcela com
+50 plantas;
+
+-  Y = altura, em centímetros, de uma planta selecionada ao acaso;
+
+-  I = ocorrência ou não de germinação de uma semente selecionada ao acaso;
+
+- Z = tempo, em dias, entre o plantio e a germinação de uma semente.
+
+- W = número de insetos capturados em uma armadilha durante um período de 24
+horas;
+
+Para cada variável:
+
+a) Classifique-a como discreta ou contínua e justifique sua resposta com base no
+conjunto de valores que ela pode assumir.
+
+b) Explique como as probabilidades são atribuídas ou calculadas em cada caso,
+destacando a diferença entre uma função de probabilidade e uma função densidade de
+probabilidade.
+
+c) Considere um valor específico pertencente ao suporte de uma variável discreta e um
+valor específico pertencente ao suporte de uma variável contínua. Compare
+
+$$P(X = x) e P(Y = y)$$
+
+e explique por que essas probabilidades apresentam comportamentos distintos.
+
+d) Para uma variável contínua, explique como deve ser calculada a probabilidade de a
+variável assumir valores em um intervalo (a, b).
+
+:::
+
+## Resposta 05
+
+### Resposta 5a)
+
+::: {.resposta}
+
+- X: discreta  --> $x \in \{0, 1, 2, \dots, 50\}$
+
+- Y: continua  --> $y \in \{0 \le y \le +\infty\}$ ou $x \in [0, 50]$
+
+- I: discreta  --> $i \in \{0, 1\}$ ou $i \in \{\text{V}, \text{F}\}$
+
+- Z: contínuo  --> $z \in  \{0, \le z \le +\infty \}$
+
+- W: discreta  --> $w \in \{0,1,2,3,...\}$
+
+:::
+
+### Resposta 5b)
+
+::: {.resposta}
+
+- **Variáveis Discretas ($X, I, W$):**  
+  As probabilidades são atribuídas pontualmente por uma Função de Probabilidade (f.p), dada por $p(x) = P(X = x) = P(x) \quad \forall \: x$.  
+  
+  Para tanto, precisa satisfazer as condições:
+  $$p(x) \ge 0,\, \forall \: x \quad \text{e} \quad \sum_{x \in \mathcal{S}} p(x) = 1$$
+  
+  Aqui, o valor de $p(x)$ é a probabilidade direta de o evento ocorrer.
+
+-  **Variáveis Contínuas ($Y, Z$):**  
+  As probabilidade de um ponto específico é zero, logo, é necessário atribuir uma probabilidade a um intervalo, através de uma Função Densidade de Probabilidade (f.d.p.) $f(y)$.  
+  
+  Novamente, é preciso satisfazer as condições:
+  
+  $$f(y) \ge 0,\, \forall \: y \in a \le y \le b \quad \text{e} \quad \int_{a}^{b} f(y) \, dy = 1$$
+  
+  A diferença fundamental é que o valor de $f(y)$ em um ponto não é uma probabilidade local (como seria no caso discreto). Para calcular a probabilidade, é necessário calcular a área sob a curva $f(y)$ em um intervalo.
+
+:::
+
+### Resposta 5c
+
+::: {.resposta}
+
+Vamos supor que X seja uma variável discreta e Y seja uma variável contínua.
+
+$P(X = x) \ge 0$. Dará um valor real que é a probabilidade associada ao ponto $x$.
+
+$P(Y = y) = 0$. Nesse caso, a probabilidade é definida pela área sobre a curva, e a área sob a curva de um ponto é nula, $P(Y = y) = \int_{y}^{y} f(u) \, du = 0$.
+
+:::
+
+### Resposta 5d
+
+::: {.resposta}
+Para uma variável contínua $Y$, a probabilidade de que ela assuma valores no intervalo  $(a, b)$ corresponde à área sob a curva de sua função densidade de probabilidade $f(y)$ delimitada por $a$ e $b$, calculada pela integral $P(a < Y < b) = \int_{a}^{b} f(y) \, dy$.
+
+:::
+
+::: {.pergunta}
+
+6. Em um estudo sobre o efeito de diferentes tratamentos em plantas, foi estabelecida a
+seguinte função de probabilidade conjunta entre o número de características desejáveis
+observadas em uma planta D e o tipo de tratamento recebido T:
+
+::: {.d-flex .justify-content-center}
+<table class="table table-bordered" style="width: auto;">
+  <thead>
+    <tr>
+      <!-- Célula com a linha diagonal -->
+      <th class="diagcell">
+        <span class="diag-bottom">T</span>
+        <span class="diag-top">D</span>
+      </th>
+      <th>0</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>A</strong></td>
+      <td>1/12</td>
+      <td>1/18</td>
+      <td>1/36</td>
+    </tr>
+    <tr>
+      <td><strong>B</strong></td>
+      <td>3/18</td>
+      <td>1/12</td>
+      <td>1/18</td>
+    </tr>
+    <tr>
+      <td><strong>C</strong></td>
+      <td>4/36</td>
+      <td>3/18</td>
+      <td>3/12</td>
+    </tr>
+  </tbody>
+</table>
+:::
+
+Com base nessa distribuição conjunta, responda:
+
+a) Determine as funções de probabilidade marginais de D e T.
+
+b) Calcule as seguintes probabilidades:
+
+i. de uma planta apresentar **uma ou mais características desejáveis** e ter recebido o
+tratamento A;
+
+ii. de uma planta apresentar **menos de duas características desejáveis** e ter recebido o
+tratamento A ou B;
+
+iii. de uma planta apresentar **menos de duas características desejáveis**.
+
+c) Determine a **função de probabilidade condicional de D dado $T=B$** e interprete, no
+contexto do problema, o que essa distribuição representa.
+
+d) Verifique se as variáveis D e T são **independentes**. Justifique sua resposta.
+
+e) Para a variável D, determine: i. Esperança matemática; ii) Mediana; iii) Moda; iv)
+Variância e v) Desvio-Padrão.
+
+f) Compare $E(D)$ com $E(D|T = B)$. O que essa comparação indica sobre o número
+esperado de características desejáveis entre as plantas submetidas ao tratamento B em
+relação ao conjunto de plantas?
+
+:::
+
+## Resposta 06
+
+::: {.resposta}
+Primeiramente, estruturamos a matriz de probabilidade conjunta:
+:::
+
+```{r Resposta 6}
+#| collapse: true
+#| comment: ""
+
+# Matriz de probabilidade conjunta P(T, D)
+# Linhas: Tratamentos (A, B, C) | Colunas: D (0, 1, 2)
+P_TD <- matrix(
+  c(1/12, 1/18, 1/36,   # A
+    3/18, 1/12, 1/18,   # B
+    4/36, 3/18, 3/12),  # C
+  nrow = 3, byrow = TRUE,
+  dimnames = list(T = c("A", "B", "C"), D = c("0", "1", "2"))
+)
+
+P_TD
+
+```
+
+### Resposta 6a
+
+``` {r Resposta 6a}
+
+# Fazendo as marginais
+p_T <- rowSums(P_TD)
+p_D <- colSums(P_TD)
+
+# Adicionando a coluna da marginal de T (soma das linhas)
+matriz_completa <- cbind(P_TD, `P(T)` = rowSums(P_TD))
+
+# Adicionando a linha da marginal de D (soma das colunas)
+matriz_completa <- rbind(matriz_completa, `P(D)` = colSums(matriz_completa))
+
+
+# Renderizando com knitr e kableExtra
+kable(round(matriz_completa, 4), 
+      align = "cccc", 
+      caption = "Distribuição Conjunta e Marginais de T e D") %>%
+  kable_styling(bootstrap_options = c("striped", "bordered"), full_width = FALSE) %>%
+  row_spec(4, bold = TRUE) %>%
+  column_spec(5, bold = TRUE)
+
+```
+
+::: {.resposta}
+A função para calcular as marginais pode ser dada por: 
+
+- Para T (linhas)
+$$P(T = t) = \sum_{d} P(T = t, D = d)$$
+
+- Para D (colunas)
+$$P(D = d) = \sum_{t} P(T = t, D = d)$$
+
+sendo:
+- t : linhas
+- d : colunas
+:::
+
+### Resposta 6b
+
+```{r Resposta 6b}
+#| collapse: true
+#| comment: ""
+
+# i. D >= 1 e T = A: soma dos elementos de T = "A" para as colunas "1" e "2"
+prob_bi <- sum(matriz_completa["A", c("1", "2")])
+
+# ii. D < 2 e T em {A, B}: submatriz das linhas "A" e "B" nas colunas "0" e "1"
+prob_bii <- sum(matriz_completa[c("A", "B"), c("0", "1")])
+
+# iii. D < 2:  somar as colunas "0" e "1" na linha marginal "P(D)"
+prob_biii <- sum(matriz_completa["P(D)", c("0", "1")])
+
+```
+
+::: {.resposta}
+
+- Situação i
+
+$P(D \ge 1 \cap T = A) = P(A, 1) + P(A, 2) = \frac{2}{36} + \frac{1}{36} = \mathbf{\frac{1}{12}} \approx `r round(prob_bi, 4)`$
+
+- Situação ii
+
+$P(D < 2 \cap T \in \{A, B\}) = P(A, 0) + P(A, 1) + P(B, 0) + P(B, 1) = \frac{3+2+6+3}{36} = \mathbf{\frac{7}{18}} \approx `r round(prob_bii, 4)`$
+
+
+- Situação iii
+
+$P(D < 2) = P(D = 0) + P(D = 1) = \frac{13}{36} + \frac{11}{36} = \mathbf{\frac{2}{3}} \approx `r round(prob_biii, 4)`$
+
+:::
+
+### Resposta 6c
+
+```{r Resposta 6c}
+
+#| collapse: true
+#| comment: ""
+
+# P(D = d | T = B) = P(T = B, D = d) / P(T = B)
+# Pega a linha do tratamento "B" (apenas colunas de D) e divide pela marginal de T="B"
+p_D_dado_B <- matriz_completa["B", c("0", "1", "2")] / matriz_completa["B", "P(T)"]
+
+
+```
+
+::: {.resposta}
+
+Dividindo cada elemento conjunto da linha do Tratamento B pela sua probabilidade marginal ($P(T = B) = \frac{11}{36}$):
+
+- $P(D = 0 \mid T = B) = \frac{6/36}{11/36} = \mathbf{\frac{6}{11}} \approx `r round(p_D_dado_B['0'], 4)`$
+
+- $P(D = 1 \mid T = B) = \frac{3/36}{11/36} = \mathbf{\frac{3}{11}} \approx `r round(p_D_dado_B['1'], 4)`$
+
+- $P(D = 2 \mid T = B) = \frac{2/36}{11/36} = \mathbf{\frac{2}{11}} \approx `r round(p_D_dado_B['2'], 4)`$
+
+Essa distribuição representa $100\%$ das plantas que receberam exclusivamente o Tratamento B. Observa-se que a maioria delas ($\approx `r round(p_D_dado_B['0'], 4)*100`\%$) não apresenta nenhuma característica desejável.
+
+:::
+
+### Resposta 6d
+
+```{r Resposta 6d}
+#| collapse: true
+#| comment: ""
+
+# Independência: P(T = t, D = d) == P(T = t) * P(D = d)
+
+p_conjunta_A0 <- matriz_completa["A", "0"]
+p_produto_A0  <- matriz_completa["A", "P(T)"] * matriz_completa["P(D)", "0"]
+
+cat("P(T = A, D = 0)              =", round(p_conjunta_A0, 4), "(Fração: 1/12 = 18/216)\n")
+cat("P(T = A) * P(D = 0)          =", round(p_produto_A0, 4),  "(Fração: 13/216)\n")
+cat("As variáveis são independentes? ", p_conjunta_A0 == p_produto_A0, "\n") # fiz p_conjunta_A0 == p_produto_A0
+
+```
+
+::: {.resposta}
+Como $P(T = A, D = 0) \ne P(T = A) \cdot P(D = 0)$ ($`r round(p_conjunta_A0,4)`$ $\ne$  $`r round(p_produto_A0,4)`$), as variáveis $D$ e $T$ não são independentes.
+:::
+
+### Resposta 6e
+
+```{r Resposta 6e}
+#| collapse: true
+#| comment: ""
+
+# Valores de D
+d_vals <- 0:2
+p_D <- matriz_completa["P(D)", c("0", "1", "2")]
+
+# i. Esperança: E(D) = sum(d * P(D = d))
+E_D <- sum(d_vals * p_D)
+
+# ii. Mediana: acumulada 0.5
+F_D <- cumsum(p_D)
+mediana_D <- d_vals[which(F_D >= 0.5)[1]]
+
+# iii. Moda: valor mais repetido, mais provavel
+moda_D <- d_vals[which.max(p_D)]
+
+# iv. Variância: Var(D) = E(D^2) - [E(D)]^2
+E_D2 <- sum((d_vals^2) * p_D)
+Var_D <- E_D2 - (E_D^2)
+
+# v. Desvio-padrão
+DP_D <- sqrt(Var_D)
+
+```
+
+
+::: {.resposta}
+
+i. Esperança Matemática: $E(D) = `r round(E_D, 4)`$
+
+ii. Mediana: $Md(D) = 1$.
+
+iii. Moda: $Mo(D) = 0$.
+
+iv. Variância: $\text{Var}(D) =`r round(Var_D, 4)`$
+
+v. Desvio-Padrão: $\text{DP}(D) = `r round(DP_D, 4)`$
+
+:::
+
+### Resposta f
+
+```{r}
+#| collapse: true
+#| comment: ""
+
+# E(D | T = B). Dá pra aproveitar a 6c
+E_D_dado_B <- sum(d_vals * p_D_dado_B)
+
+cat("E(D):         ", round(E_D, 4),        "(ou 35/36)\n")
+cat("E(D | T = B): ", round(E_D_dado_B, 4),  "(ou 7/11)\n")
+```
+
+::: {.resposta}
+
+$E(D) \approx `r round(E_D,4)`$; e
+$E(D \mid T = B) \approx `r round(E_D_dado_B,4)`$.
+
+O número médio esperado de características desejáveis sob o Tratamento B é menor do a média geral de toda a população, indicando que o Tratamento B tem eficiência menor eficiência quando comparado à média global dos tratamentos.
+
+:::
+
+::: {.pergunta}
+7. Considere uma espécie tetraploide, como muitas variedades cultivadas de batata. Em
+uma determinada posição do genoma, o indivíduo possui quatro cópias alélicas, e cada
+uma delas pode ser representada por ou .
+Seja
+$$X = {\text{número de alelos A observados nessa posição genômica}}$$
+
+Suponha que, para cada uma das quatro cópias, a probabilidade de ocorrência do alelo A
+seja p, e que as ocorrências nas quatro cópias possam ser consideradas independentes.
+
+a) Identifique a distribuição de probabilidade de X e especifique seus parâmetros.
+
+b) Explique quais características do problema justificam a utilização da distribuição
+escolhida.
+
+c) Apresente a função de probabilidade de X.
+
+d) Determine a esperança matemática e a variância de X.
+
+e) Indique o conjunto de valores que X pode assumir.
+:::
+
+
+## Resposta 07
+
+### Resposta 7a
+::: {.resposta}
+A situação em questão se assemelha a uma Distribuição Binomial, onde A = sucesso e nãoA = fracasso. Ou seja:
+
+$$X \sim \text{Binomial}(n = 4, p)$$
+
+Os parâmetros são:
+
+* $n = 4$: número total de ensaios de Bernoulli (correspondente ao nível de ploidia, isto é, as quatro cópias cromossômicas homólogas no loco);
+* $p$: probabilidade de ocorrência (frequência) do alelo $A$ em cada uma das cópias, com $0 \le p \le 1$.
+
+:::
+
+### Resposta 7b
+
+::: {.resposta}
+A escolha da distribuição Binomial é justificada pela natureza do problema. Deixando mais claro, podemos considerar os seguintes aspectos: 1) Número fixo de tentativas ($n=4$), por conta da tetraploidia; 2) É binário, ou tem sucesso (cópia A) ou fracasso (cópia não A); 3) A chance de qualquer uma das quatro posições carregar o alelo $A$ igual; e 4) Independência entre as amostras, ou seja, a ocorrência do alelo $A$ em uma posição não afeta a chance das outras posições.
+:::
+
+### Resposta 7c
+
+::: {.resposta}
+
+A função de probabilidade de $X$ é dada por:
+
+$$p(x) = P(X = x) = \binom{n}{x}p^x (1 - p)^{n - x}$$
+
+no qual $n = 4$ e $x = 0,1,2,3,4$ e $x = \text{nº de sucesso}$
+:::
+
+### Resposta 7d
+
+::: {.resposta}
+Para uma variável $X \sim \text{Binomial}(n, p)$ com $n = 4$:
+
+* **Esperança Matemática ($E(X)$):**
+  $$E(X) = n \cdot p = 4p$$
+
+* **Variância ($\text{Var}(X)$):**
+  $$\text{Var}(X) = n \cdot p \cdot (1 - p) = 4p(1 - p)$$
+:::
+
+### Resposta 7e
+
+::: {.resposta}
+$$ x = \{0, 1, 2, 3, 4\}$$
+:::
+
+
+::: {.pergunta}
+8. Sejam X e Yvariáveis aleatórias contínuas bidimensionais, em que $X$ representa a proporção de plantas resistentes a uma determinada doença e Yrepresenta a proporção de plantas que apresentam alto rendimento de frutos. Suponha que a função densidade de probabilidade conjunta de $X$ e $Y$ seja dada por:
+
+$$f(x, y) = \begin{cases}
+    4xy, & \text{se } 0 \le x \le 1 \text{ e } 0 \le y \le 1 \\ 
+0, & \text{caso contrário} 
+\end{cases}$$
+
+
+Pede-se:
+a. Determine as funções densidade de probabilidade marginal das variáveis $X$ e $Y$.
+
+b. Calcule a probabilidade de um campo experimental apresentar uma proporção de plantas resistentes à doença inferior a 0,4 e uma proporção de plantas com alto rendimento superior a 0,5.
+
+c. Determine a função densidade de probabilidade condicional de $Y$ dado que $X = x$.
+
+d. Verifique se $X$ e $Y$ são independentes. Justifique.
+
+e. Para a variável $Y$, determine as seguintes medidas:
+
+- esperança matemática;
+- mediana;
+- moda;
+- variância;
+- desvio-padrão;
+- coeficiente de variação ($CV$).
+
+f. Interprete, no contexto do problema, o significado da esperança matemática e do coeficiente de variação obtidos para $Y$.
+:::
+
+::: {.pergunta}
+9. A distribuição Binomial Negativa pode ser apresentada de diferentes formas, dependendo de qual quantidade é definida como variável aleatória. Considere uma sequência de ensaios de Bernoulli independentes, com probabilidade de sucesso em cada ensaio.
+
+a) Considere as seguintes definições para a variável aleatória Y:
+
+i. Y representa o número de falhas observadas antes da ocorrência do r-ésimo sucesso;
+
+ii. Y representa o número total de ensaios necessários até a ocorrência do r-ésimo sucesso;
+
+iii. Y representa o número de sucessos observados antes da ocorrência da r-ésima falha.
+
+Para cada uma das definições acima:
+
+- determine quais valores a variável aleatória pode assumir;
+
+- escreva a função de probabilidade correspondente;
+
+- identifique e interprete os parâmetros envolvidos.
+
+b) Construa um exemplo prático para cada uma das três definições da variável Y, mantendo, se possível, o mesmo contexto de aplicação.
+
+c) Estabeleça a relação entre as variáveis aleatórias definidas nos itens i e ii. Se Y1 representa o número de falhas antes do r-ésimo sucesso e Y2 representa o número total de ensaios até o r-ésimo sucesso, expresse Y2 em função de Y1 e r.
+
+d) Explique por que, ao utilizar a distribuição Binomial Negativa em uma análise estatística ou em um software, é importante informar explicitamente a parametrização adotada.
+:::
+
+::: {.pergunta}
+10. Para cada uma das situações a seguir:
+
+i. identifique a distribuição de probabilidade de e seus parâmetros;
+
+ii. escreva a função de probabilidade correspondente;
+
+iii. determine a tabela de distribuição de probabilidade solicitada.
+
+a) Considere a variável aleatória binária Y, associada à resistência a uma determinada doença, definida por
+
+$$Y = \begin{cases}
+    1, & \text{se o indivíduo apresenta a resistência à doença } \\ 
+0, & \text{caso contrário} 
+\end{cases}$$
+
+Suponha que a probabilidade de um indivíduo apresentar resistência seja p. Determine a tabela de distribuição de probabilidade de Y.
+
+b) Em um experimento de seleção de sementes, sabe-se que 30% das sementes são geneticamente modificadas. Seja Y o número de sementes geneticamente modificadas em um lote de 4 sementes, assumindo independência entre as sementes.
+
+    Determine a tabela de distribuição de probabilidade de Y.
+
+c) Em uma experimentação agrícola, observa-se, em média, **5 ocorrências de pragas por mês** em determinada plantação. Seja Y o número de ocorrências de pragas em um mês.
+
+    Assumindo que o número de ocorrências possa ser modelado por uma distribuição de
+Poisson, determine as probabilidades correspondentes aos quatro primeiros valores
+possíveis de Y, isto é,
+
+$$P(Y = 0), \, P(Y = 1), \, P(Y = 2), \, P(Y = 3)$$
+
+:::
+
+::: {.pergunta}
+11. Considere uma variável aleatória com função de distribuição acumulada
+
+$$F(x) = P(X ≤ x)$$
+
+a) Explique o que a função F(x) representa e apresente suas principais propriedades.
+
+b) Considere uma variável aleatória discreta cuja função de probabilidade é dada por:
+
+$$P(X = 0) = 0,10; P(X = 1) = 0,30; P(X = 2) = 0,40; P(X = 3) = 0,20$$
+
+Determine a função de distribuição acumulada (x).
+
+c) Utilizando ($x$), determine:
+
+$$P(X ≤ 2) e P(1 < X ≤ 3)$$
+
+d) Considere agora uma variável aleatória contínua com densidade
+
+$$f(x) = 2x, 0 < x < 1$$
+
+
+Determine sua função de distribuição acumulada.
+
+e) Utilizando a função obtida no item anterior, calcule P(0,2 < X ≤ 0,8).
+
+f) Explique por que, para uma variável aleatória contínua, P(X < x) = P(X ≤ x).
+
+g) Determine, algebricamente, o quantil de ordem p, qp, tal que
+
+$$P(X ≤ qp) = p$$
+
+h) Calcule os seguintes quantis: q0,25, q0,50 e q0,75.
+
+i) Em termos de medidas estatísticas, o que representa q0,50;
+
+j) Determine o quantil de ordem 0,90 e interprete seu significado.
+:::
+
+::: {.pergunta}
+12. Considere dois eventos A e B, tais que
+$$P(A) = 0,40$$
+
+$$P(B) = 0,50$$
+
+$$P(A ∩ B) = 0,20$$
+
+a) Verifique se A e B são independentes.
+
+b) Determine P(A|B) e compare-a com P(A).
+
+c) Explique, em termos de informação, o que significa afirmar que A e B são independentes.
+
+d) Um pesquisador afirma que eventos mutuamente exclusivos são necessariamente independentes. Essa afirmação está correta? Justifique.
+:::
+
+::: {.pergunta}
+13. Considere as seguintes sequências de resultados binários:
+
+$$(1,1,0,1,0)$$
+
+$$(0,1,1,0,1)$$
+
+$$(1,0,1,1,0)$$
+
+a) Compare as três sequências quanto ao número de sucessos e fracassos observados.
+
+b) Supondo que as observações sejam permutáveis, compare as probabilidades atribuídas às três sequências.
+
+c) Explique, com suas palavras, o significado de permutabilidade.
+
+d) A permutabilidade implica necessariamente independência entre as observações? Comente.
+
+e) Explique por que a ideia de permutabilidade é relevante para a Estatística Bayesiana.
+
+f) Considere a expressão
+
+$$p(θ|y) = \frac{p(y|θ)p(θ)}{p(y)}$$
+
+Identifique o papel de $p(θ)$, $p(y|θ)$, $p(θ|y)$ e $p(y)$ e explique, conceitualmente, como essa expressão generaliza a ideia de atualização de probabilidades estudada no Teorema de Bayes para eventos.
+:::
+
+::: {.pergunta}
+14. Para cada uma das situações abaixo, indique, entre as distribuições estudadas, uma distribuição que poderia ser utilizada para representar a variável aleatória. **Justifique sua escolha** com base no suporte e nas características do fenômeno.
+
+a) Proporção de sementes germinadas em diferentes lotes.
+
+b) Tempo decorrido até a ocorrência de determinado evento.
+
+c) Característica quantitativa contínua aproximadamente simétrica em torno de um valor central.
+
+d) Variável contínua positiva e assimétrica à direita.
+
+e) Valor selecionado aleatoriamente em um intervalo (a, b), sem preferência por nenhuma região do intervalo.
+:::
+
+::: {.pergunta}
+15. As atividades deste exercício deverão ser realizadas com o auxílio do software **R ou de outra linguagem de programação de escolha do(a) estudante**, utilizando como referência as rotinas computacionais apresentadas na aula prática. Escolha uma variável aleatória relacionada à sua área de pesquisa e desenvolva as etapas a seguir.
+
+**a) Definição da variável aleatória**
+Apresente a variável aleatória escolhida e explique brevemente sua importância no contexto da sua área de pesquisa.
+
+**b) Natureza e conjunto de valores possíveis**
+
+Classifique a variável como **discreta ou contínua** e indique o conjunto de valores que ela pode assumir.
+
+**c) Escolha da distribuição de probabilidade**
+
+Escolha uma distribuição de probabilidade que considere adequada para representar a variável e especifique seus parâmetros. Para este exercício, os valores dos parâmetros poderão ser definidos de forma **subjetiva ou fictícia**.
+
+**d) Justificativa da distribuição escolhida**
+
+Justifique a escolha da distribuição com base nas características da variável e no mecanismo probabilístico associado ao fenômeno estudado.
+
+**e) Interpretação dos parâmetros**
+
+Interprete, no contexto do problema, cada um dos parâmetros da distribuição escolhida.
+
+**f) Função de probabilidade ou função densidade**
+
+Apresente a expressão da:
+- função de probabilidade, caso a variável seja discreta; ou
+-  função densidade de probabilidade, caso a variável seja contínua.
+
+**g) Representação gráfica da distribuição**
+
+Construa o gráfico da função de probabilidade ou da função densidade de probabilidade e descreva as principais características observadas em sua forma.
+
+**h) Função de distribuição acumulada**
+
+Apresente a função de distribuição acumulada associada à variável e construa seu gráfico.
+
+**i) Probabilidades de interesse**
+Defina pelo menos **três eventos de interesse prático** relacionados à variável escolhida e calcule suas probabilidades utilizando a distribuição assumida.
+
+Para variáveis contínuas, inclua pelo menos uma probabilidade associada a um **intervalo de valores**.
+
+**j) Medidas de posição e dispersão**
+
+Determine $E(X)$, $Mediana(X)$, $Moda(X)$,$Var(X)$, $DP(X)$ e $CV(X)$
+
+Interprete pelo menos a **esperança matemática** e o **coeficiente de variação** no contexto do problema.
+
+**k) Quantis**
+
+Determine pelo menos os seguintes quantis da distribuição: q0,25, q0,50, q0,75 e q0 95 Interprete o significado de q0,50 e q0,95 no contexto da variável escolhida.
+
+**l) Simulação**
+
+Gere uma amostra aleatória de tamanho da distribuição escolhida, utilizando os
+parâmetros definidos no item **c**.
+
+**m) Comparação entre valores teóricos e simulados**
+
+A partir da amostra simulada, calcule a média e a variância amostrais e compare-as com a **esperança matemática** e a **variância teóricas** da distribuição escolhida. Comente as diferenças observadas.
+
+**n) Representação da amostra simulada**
+
+Construa uma representação gráfica adequada da amostra simulada — por exemplo,
+gráfico de barras para variáveis discretas ou histograma para variáveis contínuas — e compare-a visualmente com a distribuição teórica adotada.
+
+**o) Conexão com a inferência estatística**
+
+Neste exercício, os parâmetros da distribuição foram previamente fixados. Explique, de forma conceitual, o que mudaria se esses parâmetros fossem **desconhecidos e precisassem ser inferidos a partir de dados observados**.
+
+:::
