@@ -671,7 +671,42 @@ observadas em uma planta D e o tipo de tratamento recebido T:
         <span class="diag-bottom">T</span>
         <span class="diag-top">D</span>
       </th>
+      <th>0</th>::: {.d-flex .justify-content-center}
+<table class="table table-bordered" style="width: auto;">
+  <thead>
+    <tr>
+      <!-- Célula com a linha diagonal -->
+      <th class="diagcell">
+        <span class="diag-bottom">T</span>
+        <span class="diag-top">D</span>
+      </th>
       <th>0</th>
+      <th>1</th>
+      <th>2</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>A</strong></td>
+      <td>1/12</td>
+      <td>1/18</td>
+      <td>1/36</td>
+    </tr>
+    <tr>
+      <td><strong>B</strong></td>
+      <td>3/18</td>
+      <td>1/12</td>
+      <td>1/18</td>
+    </tr>
+    <tr>
+      <td><strong>C</strong></td>
+      <td>4/36</td>
+      <td>3/18</td>
+      <td>3/12</td>
+    </tr>
+  </tbody>
+</table>
+:::
       <th>1</th>
       <th>2</th>
     </tr>
@@ -855,7 +890,7 @@ Essa distribuição representa $100\%$ das plantas que receberam exclusivamente 
 #| collapse: true
 #| comment: ""
 
-# Independência: P(T = t, D = d) == P(T = t) * P(D = d)
+# Independência: P(T = t, D = d) = P(T = t) * P(D = d)
 
 p_conjunta_A0 <- matriz_completa["A", "0"]
 p_produto_A0  <- matriz_completa["A", "P(T)"] * matriz_completa["P(D)", "0"]
@@ -932,7 +967,7 @@ cat("E(D | T = B): ", round(E_D_dado_B, 4),  "(ou 7/11)\n")
 $E(D) \approx `r round(E_D,4)`$; e
 $E(D \mid T = B) \approx `r round(E_D_dado_B,4)`$.
 
-O número médio esperado de características desejáveis sob o Tratamento B é menor do a média geral de toda a população, indicando que o Tratamento B tem eficiência menor eficiência quando comparado à média global dos tratamentos.
+O número médio esperado de características desejáveis sob o Tratamento B é menor do a média geral de toda a população, indicando que o Tratamento B tem menor eficiência quando comparado à média global dos tratamentos.
 
 :::
 
@@ -1403,7 +1438,7 @@ $$Y = \begin{cases}
 0, & \text{caso contrário} 
 \end{cases}$$
 
-Suponha que a probabilidade de um indivíduo apresentar resistência seja p. Determine a tabela de distribuição de probabilidade de Y.
+  Suponha que a probabilidade de um indivíduo apresentar resistência seja p. Determine a tabela de distribuição de probabilidade de Y.
 
 b) Em um experimento de seleção de sementes, sabe-se que 30% das sementes são geneticamente modificadas. Seja Y o número de sementes geneticamente modificadas em um lote de 4 sementes, assumindo independência entre as sementes.
 
@@ -1418,6 +1453,142 @@ possíveis de Y, isto é,
 $$P(Y = 0), \, P(Y = 1), \, P(Y = 2), \, P(Y = 3)$$
 
 :::
+
+## Resposta 10
+
+### Resposta 10a - variável aleatória binária Y
+
+::: {.resposta}
+
+i) A variável $Y$ é booleana ($0$ ou $1), logo, $Y$ segue uma distribuição de Bernoulli:
+
+$Y \sim \text{Bernoulli}(p)$, com o parâmetro $p$, que representa o sucesso
+
+ii) $$P(Y = y) = p^y (1 - p)^{1 - y}$$
+
+iii) 
+
+::: {.d-flex .justify-content-center}
+<table class="table table-bordered" style="width: auto;">
+  <thead>
+    <tr>
+      <th>y</th>
+      <th>P(Y=y)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0</td>
+      <td>1-p</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>p</td>
+    </tr>
+    <tr>
+      <td>Total</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+:::
+
+:::
+
+### Resposta 10b - seleção de sementes
+
+::: {.resposta}
+
+i) O experimento consiste em $n = 4$ ensaios de Bernoulli independentes, cada um com probabilidade $p = 0{,}30$ de a semente ser geneticamente modificada. Portanto, $Y$ segue uma distribuição Binomial:
+
+$Y \sim \text{Binomial}(n = 4, \, p = 0{,}30)$, com parâmetros $n = 4$ e p = $0,3$
+
+ii) 
+
+$$P(Y = y) = \binom{n}{y} p^y (1 - p)^{n - y} = \binom{4}{y} (0{,}30)^y (0{,}70)^{4 - y}$$
+
+```{r Resposta 10b}
+#| collapse: true
+#| comment: ""
+
+# Parâmetros
+n_b <- 4
+p_b <- 0.30
+
+# Y varia de 0 ao parâmetro
+y_b <- 0:n_b
+
+# Vou usar a função nativa dbinom()
+prob_b <- dbinom(y_b, size = n_b, prob = p_b)
+
+# Montar o data.frame 
+tabela_10b <- data.frame(
+  y = as.character(y_b),
+  P_Y = round(prob_b, 4),
+  P_Y_pct = paste0(round(prob_b * 100, 2), "%")
+)
+
+# Adicionar a linha do total
+total_linha <- data.frame(
+  y = "Total",
+  P_Y = round(sum(prob_b), 4),
+  P_Y_pct = paste0(sum(prob_b) * 100, "%")
+)
+
+tabela_final <- rbind(tabela_10b, total_linha)
+
+# Renomeando as colunas para ficar melhor no kable
+colnames(tabela_final) <- c("y (nº sementes GM)", "P(Y = y)", "P(Y = y) %")
+
+knitr::kable(tabela_final, align = "ccc")
+
+```
+
+### Resposta 10c - pragas por mês
+
+Nessa questão, temos a ocorrêmncia de determinado evento em um intervalo de tempo, portanto Y segue uma distribuição de Poisson.
+
+$Y \sim \text{Poisson}(\lambda = 5)$, com o parâmetro : $\lambda = 5$,
+
+ii)
+$$P(Y = y) = \frac{e^{-\lambda} \lambda^y}{y!} = \frac{e^{-5} 5^y}{y!}$$
+
+iii) Probabilidade para os primeiros valores (y = {0,1,2,3})
+
+```{r Resposta 10c}
+#| collapse: true
+#| comment: ""
+
+# Parâmetro da taxa - nesse caso é taxa mesmo, pelo o que entendi
+lambda_c <- 5
+
+# Quatro primeiros valores possíveis
+y_c <- 0:3
+
+# Usando a função nativa do R dpois()
+prob_c <- dpois(y_c, lambda = lambda_c)
+
+# Pedi ajuda ao Gemini para conseguir montar um dataframe com as fórmulas
+tabela_10c <- data.frame(
+  `y (nº ocorrências)` = y_c,
+  `Fórmula exata` = c(
+    "e^(-5) * 5^0 / 0!",
+    "e^(-5) * 5^1 / 1!",
+    "e^(-5) * 5^2 / 2!",
+    "e^(-5) * 5^3 / 3!"
+  ),
+  `P(Y = y) [4 dec.]` = round(prob_c, 4),
+  `P(Y = y) %` = paste0(round(prob_c * 100, 2), "%"),
+  check.names = FALSE
+)
+
+knitr::kable(tabela_10c, align = "cccc")
+```
+
+:::
+
+
+
 
 ::: {.pergunta}
 11. Considere uma variável aleatória com função de distribuição acumulada
@@ -1458,6 +1629,146 @@ i) Em termos de medidas estatísticas, o que representa q0,50;
 j) Determine o quantil de ordem 0,90 e interprete seu significado.
 :::
 
+## Resposta 11
+
+### Resposta 11a
+
+::: {.resposta}
+
+A Função de Distribuição Acumulada ($F(x) = P(X \le x)$), representa a probabilidade de que a variável aleatória $X$ assuma um valor menor ou igual a um determinado número real $x$. As principais propriedades são:
+
+- $0 \le F(x) \le 1$, para todo valor de $x$;
+
+- Se $x_1 \le x_2$, então $F(x_1) \le F(x_2)$, portanto não é decrescente.
+
+- $\lim\limits_{x \to -\infty} F(x) = 0 \quad \text{e} \quad \lim\limits_{x \to +\infty} F(x) = 1$
+
+:::
+
+### Resposta 11b
+
+::: {.resposta}
+
+Para a variável aleatória discreta, temos:
+
+$$F(x) = \begin{cases}  0, & \text{se } x < 0 \\ 0{,}10, & \text{se } 0 \le x < 1 \\ 0{,}40, & \text{se } 1 \le x < 2 \\ 0{,}80, & \text{se } 2 \le x < 3 \\ 1{,}00, & \text{se } x \ge 3 \end{cases}$$
+
+
+Para facilitar a visualização, vamos fazer uma tabela:
+
+| Intervalo de $x$ | Eventos acumulados | Cálcuko de $F(x)$ | $F(x)$ |
+| --- | --- | --- | --- | 
+| $x < 0$ | nenhum | $0$ | $0,00$ |
+| $0 \le x < 1$ | $\{X = 0\}$ | $P(X = 0)$ | $0{,}10$ |
+| $1 \le x < 2$ | $\{X = 0, \, X = 1\}$ | $0{,}10 + P(X = 1) = 0{,}10 + 0{,}30$ | $0,40$ |
+| $2 \le x < 3$ | $\{X = 0, \, X = 1, \, X = 2\}$ |  $0{,}40 + P(X = 2) = 0{,}40 + 0{,}40$ | $0,80$ | 
+| $x \ge 3$ | $\{X = 0, \, X = 1, \, X = 2, \, X = 3\}$ | $0{,}80 + P(X = 3) = 0{,}80 + 0{,}20$ |  $1,00$ |
+
+:::
+
+
+
+### Resposta 11c
+
+::: {.resposta}
+
+- $P(X \le 2) = F(2) = 0{,}80$
+
+- $P(1 < X \le 3) =  F(3) - F(1) =  1.00 - 0.40 = 0.60$
+
+:::
+
+### Resposta 11d
+
+::: {.resposta}
+
+Para uma variável aleatória contínua com fuynção de densidade $p(x)$, a $F(x)$ é definida como:
+
+$$F(x) = P(X \le x) = P(-\infty < X \le x) = \int\limits_{-\infty}\limits^x p(t)dt$$
+
+
+Logo, se $f(x) = 2x$ para $0 < x < 1$, temos:
+
+- Para $x \le 0$: $F(x) = 0$
+
+- Para $0 < x < 1$: $F(x) = \int_{0}^{x} 2t \, dt = \left[ t^2 \right]_0^x = x^2$
+
+- Para $x \ge 1$: $F(x) = 1$
+
+Enfim:
+
+$$F(x) = \begin{cases}  0, & \text{se } x \le 0 \\ x^2, & \text{se } 0 < x < 1 \\ 1, & \text{se } x \ge 1 \end{cases}$$
+
+:::
+
+### Resposta 11e
+
+::: {.resposta}
+
+Utilizando $F(x) = x^2$ para $0 < x < 1$
+
+$P(0.2 < X \le 0.8) = F(0.8) - F(0.2) = (0.8)^2 - (0.2)^2$ 
+
+$P(0.2 < X \le 0.8) = 0.64 - 0.04 = \mathbf{0.60}$
+
+:::
+
+### Resposta 11f
+
+::: {.resposta}
+Para uma variável aleatória qualquer na qual $x_1 < x_2$:
+
+$P(x_1 < X < x_2) = P(x_1 \le X < x_2) = P(x_1 < X \le x_2) = P(x_1 \le X \le x_2) = F(x_2) - F(x_1)$.
+
+Dá para pensar também em um evento pontual, no sentido que: $P(X \le x) = P(X < x) + P(X = x)\,$, porém $P(X = x) = \int_{x}^{x} f(t) \, dt = 0$, então não importa se é $<$ ou $\le$, pois a densidade do ponto específico é zero.
+
+:::
+
+### Reposta 11g
+
+
+::: {.resposta}
+O quantil para uma variável aleatória contínua $X$ pode ser definido como:
+
+$$P(X \le x) \ge \frac{k}{q} \quad \text{e} \quad P(X \ge x) \ge 1 - \frac{k}{q}$$
+
+Na questão, é solicitado o quantil de ordem $p$, $q_p$, tal que $P(X \le q_p) =  p$
+
+Como $F(x) = x^2$ para $x \in (0, 1)$, podemos substituir $x$ por $q_p$:
+
+$(q_p)^2 = p \quad \text{,logo:} \quad q_p = \sqrt{p}$
+:::
+
+### Resposta 11h
+
+::: {.resposta}
+
+Utilizando o que foi encontrado acima ($q_p = \sqrt{p}$):
+
+- $q_{0{,}25}$: $q_{0.25} = \sqrt{0.25} = \mathbf{`r round(sqrt(0.25),4)`}$
+
+- $q_{0.50}$: $q_{0.50} = \sqrt{0.50} = \frac{\sqrt{2}}{2} \approx \mathbf{`r round(sqrt(0.5), 4)`}$
+
+- $q_{0{,}75}$: $q_{0.75} = \sqrt{0.75} = \frac{\sqrt{3}}{2} \approx \mathbf{`r round(sqrt(0.75), 4)`}$
+:::
+
+### Resposta 11i
+
+::: {.resposta}
+
+Em termos de medidas estatísticas, o quantil de ordem $0.50$ representa a Mediana da distribuição. Nesse quanil, a distribuição de probabilidade é dividida ao meio, portanto 50% de probabilidade está concentrada em valores abaixo ou iguais a $q_{0.50}$ e os outros $50\%$ em valores acima dele.
+
+:::
+
+### Resposta 11j
+
+::: {.resposta}
+
+$q_{0.90}$: $q_{0{,}90} = \sqrt{0.90} \approx \mathbf{`r round(sqrt(0.9),4)`}$. Logo, $90\%$ das observações dessa população assumem valores menores ou iguais a $`r round(sqrt(0.9),4)`$. Os outros $10\%$ possuem valores entre $`r round(sqrt(0.9),4)`$ e $1.0$.
+
+:::
+
+
 ::: {.pergunta}
 12. Considere dois eventos A e B, tais que
 $$P(A) = 0,40$$
@@ -1473,6 +1784,56 @@ b) Determine P(A|B) e compare-a com P(A).
 c) Explique, em termos de informação, o que significa afirmar que A e B são independentes.
 
 d) Um pesquisador afirma que eventos mutuamente exclusivos são necessariamente independentes. Essa afirmação está correta? Justifique.
+:::
+
+## Resposta 12
+
+### Resposta 12a
+
+::: {.resposta}
+
+Dois eventos são independentes se a probabilidade da ocorrência conjunta for igual ao produto das probabilidades marginais ($P(A \cap B) = P(A) \cdot P(B)$.
+
+Conforme os dados:
+
+- $P(A \cap B) = 0{,}20$
+
+- $P(B) = 0,50$
+
+- $P(A ∩ B) = 0,20$
+
+Então $P(A) \cdot P(B) = 0.4 \times 0.5 = 0.20 = P(A \cap B)$, logo os eventos são independentes. 
+:::
+
+
+### Resposta 12b
+
+::: {.resposta}
+
+$P(A \mid B) = \frac{P(A \cap B)}{P(B)}$. Substituindo os valores: 
+
+$$P(A \mid B) = \frac{0{,}20}{0{,}50} = \mathbf{0{,}40}$$
+
+Pode ser observado que:$P(A \mid B) = P(A) = 0{,}40$. A probabilidade condicional $P(A \mid B)$ é igual à probabilidade marginal $P(A)$, indicando reforçando que são eventos independentes.
+
+:::
+
+### Resposta 12c
+
+::: {.resposta}
+
+Ao afirmar que $A$ e $B$ são independentes, estamos indicando que saber que o evento $B$ ocorreu não fornece nenhuma informação útil para atualizar a probabilidade de ocorrência do evento $A$ e vice-versa.
+
+:::
+
+### Resposta 12d
+
+::: {.resposta}
+
+A afirmação está incorreta. Os eventos mutuamente exclusivos não podem ocorrer simultaneamente, ou seja, $A \cap B = \emptyset \implies P(A \cap B) = 0$. Já a condição de independência necessita que $P(A \cap B) = P(A) \cdot P(B)$. Para que eventos mutuamente exclusivos fossem independentes, seria necessário ter: $0 = P(A) \cdot P(B)$, o que implicaria que ao menos um deles fosse impossível. 
+
+Para eventos possíveis ($P(A) > 0$ e $P(B) > 0$): $P(A \mid B) = \frac{P(A \cap B)}{P(B)} = \frac{0}{P(B)} = 0 \neq P(A)$, então saber que $B$ ocorreu fornece informação sobre $A$, sendo eles mutuamente exclusivo.
+
 :::
 
 ::: {.pergunta}
@@ -1501,6 +1862,91 @@ $$p(θ|y) = \frac{p(y|θ)p(θ)}{p(y)}$$
 Identifique o papel de $p(θ)$, $p(y|θ)$, $p(θ|y)$ e $p(y)$ e explique, conceitualmente, como essa expressão generaliza a ideia de atualização de probabilidades estudada no Teorema de Bayes para eventos.
 :::
 
+## Resposta 13
+
+### Resposta 13a
+
+::: {.resposta}
+
+A resposta vai depender do que é fracasso e o que é sucesso. Considerando $0$ o fracasso, teremos:
+
+- $(1,1,0,1,0)$: 3 sucessos em 05 resultados
+
+- $(0,1,1,0,1)$: 03 sucessos em 05 resultados
+
+- $(1,0,1,1,0)$: 03 sucessos em 05 resultados
+
+A única coisa que diferencia as sequências é a ordem que os fracassos e sucessos ocorreram, mas a conta total é a mesma, ou seja, 03 sucessos e 02 fracassos em 05 resultados.
+
+:::
+
+### Resposta 13b {#resp-13b}
+
+::: {.resposta}
+
+Uma sequência é permutável quando sua distribuição conjunta não depende da ordem na qual os resultados são apresentados. Então, no fringir dos ovos, o que importar é o que foi observado e não a ordem em que foi observado.
+
+Nesse sentido, comparando as probabilidades atribuídas às três sequências, temos:
+
+- Para a Sequência 01:
+  $$P(Y_1=1, Y_2=1, Y_3=0, Y_4=1, Y_5=0 \mid \theta) = \theta \cdot \theta \cdot (1-\theta) \cdot \theta \cdot (1-\theta) = \theta^3 (1-\theta)^2$$
+
+- Para a Sequência 02:
+
+$$P(Y_1=0, Y_2=1, Y_3=1, Y_4=0, Y_5=1 \mid \theta) = (1-\theta) \cdot \theta \cdot \theta \cdot (1-\theta) \cdot \theta = \theta^3 (1-\theta)^2$$
+
+- Para a Sequência 03:
+
+$$P(Y_1=1, Y_2=0, Y_3=1, Y_4=1, Y_5=0 \mid \theta) = \theta \cdot (1-\theta) \cdot \theta \cdot \theta \cdot (1-\theta) = \theta^3 (1-\theta)^2$$
+
+Todas elas chegam em $\theta^3 (1 - \theta)^2$, então terão probabilidade marginal igual a $P(y) = \int_{0}^{1} \theta^3 (1 - \theta)^2 \, p(\theta) \, d\theta$
+:::
+
+### Resposta 13c
+
+::: {.resposta}
+Creio que acabei repodendo no primeiro parágrafo da [Questão 13b](#resp-13b).
+:::
+
+
+### Resposta 13d
+
+::: {.resposta}
+
+Não. Permutabilidade não implica necessariamente em independência.Toda sequência de variáveis aleatórias independentes e identicamente distribuídas (i.i.d.) é permutável, mas a recíproca não é verdadeira. 
+
+Variáveis permutáveis podem apresentar dependência estocástica. Por exemplo, em uma amostragem sem reposição de uma urna, se retiramos bolas brancas e pretas sucessivamente, as extrações individuais não são independentes, pois retirar uma bola branca na primeira rodada altera a probabilidade da segunda. todavia, a probabilidade conjunta de qualquer sequência contendo $k$ brancas e $n-k$ pretas é a mesma, independentemente da ordem das extrações. Portanto, as variáveis são dependentes, porém permutáveis.
+
+:::
+
+### Resposta 13e
+
+::: {.resposta}
+
+
+A importância da permutabilidade para a estatística bayesiana é justificada pelo Teorema de De Finetti. Ele mostra que para uma sequência infinita de observações de Bernoulli permutáveis na qual a probabilidade verdadeira ($p$) é desconhecida, essa incerteza sobre $p$ pode ser representada por uma distribuição de probabilidade. Nesse sentido, teremos uma incerteza inicial $p \sim \pi(p)$, mas ao observarmos os dados, podemos utilizar o Teorema de Bayes para atualizar o valor de $p$, ou seja:$\pi(p ∣ x) \propto (x ∣ p)\pi(p)$.  
+
+:::
+
+### Resposta 13f
+
+::: {.resposta}
+
+Dada a expressão bayesiana:$$p(\theta \mid y) = \frac{p(y \mid \theta) \, p(\theta)}{p(y)}$$, temos os seguintes componentes:
+
+- $p(\theta)$ - Probabilidade a priori: quantifica o estado de incerteza e o conhecimento prévio sobre o parâmetro $\theta$ antes da observação da amostra $y$.
+
+- $p(y | \theta)$ - Função de verossimilhança: representa o modelo probabilístico gerador dos dados; avalia a plausibilidade.
+
+- $p(y)$ — Distribuição  marginal dos dados: mede a probabilidade total de observar $y$ isolando os efeitos de um evento
+
+- $p(\theta \mid y)$ — Probabilidade a posteriori: representa o estado de incerteza atualizado sobre $\theta$ após a observar uma nova evidência
+
+No Teorema de Bayes, a probabilidade de um evento é A atualizada conforme observamos um evento B. Nesse sentido, um parâmetro (como o $\theta$) não é uma constante da população como é na estatística frequentista, mas sim uma variável aleatória e a probabilidade desse parâmetro (posteriori) é atualizada conforme novos conhecimentos são observados(priori; aqui, pode-se dizer que a posteriori de uma observação entra como uma novo priori da próxima).
+
+:::
+
+
 ::: {.pergunta}
 14. Para cada uma das situações abaixo, indique, entre as distribuições estudadas, uma distribuição que poderia ser utilizada para representar a variável aleatória. **Justifique sua escolha** com base no suporte e nas características do fenômeno.
 
@@ -1514,6 +1960,43 @@ d) Variável contínua positiva e assimétrica à direita.
 
 e) Valor selecionado aleatoriamente em um intervalo (a, b), sem preferência por nenhuma região do intervalo.
 :::
+
+## Resposta 14
+
+
+### Resposta 14a - proporção de sementes germinadas
+
+::: {.resposta}
+Distribuição Beta, pois é limitada entre 0 e 1, ou seja, o $\mathcal{S}_Y = (0, 1)$ ou $[0, 1]$
+:::
+
+### Resposta 14b - tempo até determinado evento
+
+::: {.resposta}
+Distribuição Exponencial, pois $\mathcal{S}_Y = [0, +\infty)$, ou seja, o tempo até a ocorrência de um evento é sempre não negativo e contínuo.
+:::
+
+### Resposta 14c - quantitativo e simétrico em torno de um valor central
+
+::: {.resposta}
+Distribuição Normal, com $\mathcal{S}_Y = (-\infty, +\infty)$ e uma região simétrica central com valor $\mu$ e com uma certa dispersão em torno desse valor ($\sigma^2$). 
+:::
+
+### Resposta 14d - contínua positiva e assimétrica à direita
+
+::: {.resposta}
+Distribuição Gama. com $\mathcal{S}_Y = (0, +\infty)$ ou $[0, +\infty)$. Existe normamente uma concentração de valores à esquerda nessa distribuição, tal qual caracterizado no item d. 
+:::
+
+### Resposta 14e
+
+::: {.resposta}
+Distribuição Uniforme Contínua, $U(a, b)$, com $\mathcal{S}_Y = [a, b]$. A variável é contínua e restrita ao intervalo limitado $[a, b]$. Ademais, a probabilidade em qualquer intervalo (considerando os limites) não depende da sua localização e a fdp é constante, tal qual indicado pela questão.
+:::
+
+
+
+
 
 ::: {.pergunta}
 15. As atividades deste exercício deverão ser realizadas com o auxílio do software **R ou de outra linguagem de programação de escolha do(a) estudante**, utilizando como referência as rotinas computacionais apresentadas na aula prática. Escolha uma variável aleatória relacionada à sua área de pesquisa e desenvolva as etapas a seguir.
@@ -1583,5 +2066,346 @@ gráfico de barras para variáveis discretas ou histograma para variáveis cont�
 **o) Conexão com a inferência estatística**
 
 Neste exercício, os parâmetros da distribuição foram previamente fixados. Explique, de forma conceitual, o que mudaria se esses parâmetros fossem **desconhecidos e precisassem ser inferidos a partir de dados observados**.
+
+:::
+
+
+## Reposta 15
+
+### Resposta 15a
+
+::: {.resposta}
+
+A variável aleatória de interesse é definida como:
+
+$$X = \text{Número de locos marcadores do tipo SNP em homozigose em um painel genômico de } n = 50 \text{ marcadores bialélicos}$$
+
+Decidi por essa variável aleatória, pois estou estudando endogamia e creio que possa ser útil dentro desse contexto, visto que monitoramento do nível de homozigose (protanto da endogamia) é importante para não perder variabilidade genética ou ter muita depressão endogâmica.
+:::
+
+### Resposta 15b
+
+::: {.resposta}
+
+Variável aleatória discreta. Pensando em m $n = 50$ locos avaliados, teremos
+$$\mathcal{S}_X = \{0, 1, 2, \dots, 50\}$$
+$$S_X = \{0, 1, 2, \dots, 50\}$$
+
+
+:::
+
+### Resposta 15c
+
+::: {.resposta}
+
+A variável $X$ é modelada por uma Distribuição Binomial:
+
+$$X \sim \text{Binomial}(n = 50, \, p = 0{,}60)$$
+
+com parâmetros:
+
+$n = 50$: número total de ensaios (locos marcadores avaliados);
+
+$p = 0{,}60$: probabilidade de um loco genômico individual encontrar-se em homozigose.
+
+:::
+
+### Resposta 15d
+::: {.resposta}
+
+Escolhi a distribuição Binomial, porque o fenômeno atende aos quatro pressupostos para Bernoulli repetido: 
+
+- É binário: Para cada loco genômico $i$ ($i = 1, \dots, n$), o genótipo observado é classificado de forma binária em Sucesso ($X_i = 1$, genótipo homozigoto: $A_1A_1$ ou $A_2A_2$) ou Fracasso ($X_i = 0$, genótipo heterozigoto: $A_1A_2$).
+
+- Há um núero fixo de ensaios: estabeleci para o exerçicio um painel genômico de $n = 50$ locos.
+
+- A probabilidade ($p$) é constante, assmindo que a probabilidade média de homozigose esperada sob o histórico reprodutivo da linhagem seja homogênea entre os marcadores do painel ($p = 0.60$).
+
+- Sob equilíbrio de ligação, a ocorrência de homozigose em um loco não interfere nos demais locos.Assim, $X = \sum_{i=1}^{50} X_i$ segue uma distribuição Binomial.
+
+:::
+
+### Resposta 15e
+::: {.resposta}
+
+- $n = 50$ (Tamanho da amostra / Número de locos): Representa a densidade do painel molecular analisado.
+
+- $p = 0{,}60$ (Taxa esperada de homozigose): representa a probabilidade de que qualquer marcador bialélico tomado ao acaso nessa linhagem seja homozigoto.
+
+:::
+
+### Resposta 15f
+::: {.resposta}
+
+Como a variável $X$ é discreta, sua Função de Probabilidade (fp) é dada por:
+
+$$P(X = x) = \binom{n}{x} p^x (1 - p)^{n - x} = \binom{50}{x} (0{,}60)^x (0{,}40)^{50 - x}, \quad \text{para } x \in \{0, 1, 2, \dots, 50\}$$
+
+Para qualquer valor fora do suporte ($x \notin \{0, 1, \dots, 50\}$), $P(X = x) = 0$.
+
+:::
+
+### Resposta 15g
+::: {.resposta}
+
+```{r Resposta 15g}
+#| collapse: true
+#| comment: ""
+#| fig-cap: "Função de probabilidade da distribuição Binomial(50, 0.60)."
+
+# Parâmetros
+n_par <- 50
+p_par <- 0.60
+x_grid <- 0:n_par
+prob_grid <- dbinom(x_grid, size = n_par, prob = p_par)
+
+# Gráfico de barras da função de probabilidade
+plot(x_grid, prob_grid, type = "h", lwd = 3, col = "steelblue4",
+     main = "Função de Probabilidade: Binomial(n = 50, p = 0.60)",
+     xlab = "Número de locos homozigotos (x)",
+     ylab = "P(X = x)",
+     xlim = c(15, 45), las = 1)
+points(x_grid, prob_grid, pch = 19, col = "steelblue4", cex = 0.8)
+grid(nx = NULL, ny = NULL, lty = 2, col = "gray80")
+```
+
+
+Podem ser observadas as seguintes características:
+
+- Unimodalidade: A massa de probabilidade concentra-se em torno do ponto central $x = 30$, decaindo simetricamente para ambas as extremidades.
+
+- Cauda curta em extremos: A probabilidade de obter menos de $15$ ou mais de $45$ locos homozigotos é praticamente nula ($< 10^{-5}$).
+:::
+
+### Resposta 15h
+::: {.resposta}
+
+A Função de Distribuição Acumulada (F(x)) é dada pelo somatório cumulativo das probabilidades pontuais até o valor $x$:
+
+$$F(x) = P(X \le x) = \begin{cases} 
+0, & \text{se } x < 0 \\
+\sum_{k=0}^{\lfloor x \rfloor} \binom{50}{k} (0{,}60)^k (0{,}40)^{50 - k}, & \text{se } 0 \le x < 50 \\
+1, & \text{se } x \ge 50
+\end{cases}$$
+
+onde $\lfloor x \rfloor$ representa o maior inteiro menor ou igual a $x$.
+
+``` {r Resposta 15h}
+#| collapse: true
+#| comment: ""
+#| fig-cap: "Função de Distribuição Acumulada em degraus da Binomial(50, 0.60)."
+
+# Cálculo da FDA
+fda_vals <- pbinom(x_grid, size = n_par, prob = p_par)
+
+plot(stepfun(x_grid, c(0, fda_vals)), do.points = TRUE, pch = 16, cex = 0.6,
+     col.points = "darkred", col.hor = "darkred", verticals = FALSE,
+     main = "Função de Distribuição Acumulada - FDA (Degraus)",
+     xlab = "Número de locos homozigotos (x)",
+     ylab = expression(F(x) == P(X <= x)),
+     xlim = c(15, 45), las = 1)
+grid(nx = NULL, ny = NULL, lty = 2, col = "gray80")
+
+```
+
+
+:::
+
+### Resposta 15i
+::: {.resposta}
+
+No contexto que escolhi, podemos definir os três eventos abaixo:
+
+- Evento 1 (Homozigose muito baixa): probabilidade de um indivíduo apresentar no máximo $25$ locos homozigotos ($\le 50\%$ de homozigose no painel):
+
+$$P(X \le 25) = F(25)$$
+
+- Evento 2 (Faixa ideal de seleção):p robabilidade de o número de locos homozigotos estar estritamente contido no intervalo de $28$ a $35$ locos ($56\%$ a $70\%$ de homozigose):
+
+$$P(28 \le X \le 35) = P(X \le 35) - P(X \le 27) = F(35) - F(27)$$
+
+- Evento 3 (Homozigose extrema):Probabilidade de um indivíduo apresentar mais de $36$ locos homozigotos ($> 72\%$ de homozigose no genoma):
+
+$$P(X > 36) = 1 - P(X \le 36) = 1 - F(36)$$
+
+
+```{r Reposta 15i}
+#| collapse: true
+#| comment: ""
+
+# Cálculo exato das probabilidades via pbinom()
+p_evento1 <- pbinom(25, size = n_par, prob = p_par)
+p_evento2 <- pbinom(35, size = n_par, prob = p_par) - pbinom(27, size = n_par, prob = p_par)
+p_evento3 <- 1 - pbinom(36, size = n_par, prob = p_par)
+
+cat("P(X <= 25)           =", round(p_evento1, 4), paste0("(", round(p_evento1*100, 2), "%)\n"))
+cat("P(28 <= X <= 35)     =", round(p_evento2, 4), paste0("(", round(p_evento2*100, 2), "%)\n"))
+cat("P(X > 36)            =", round(p_evento3, 4), paste0("(", round(p_evento3*100, 2), "%)\n"))
+
+```
+
+:::
+
+### Resposta 15j
+::: {.resposta}
+
+Para $X \sim \text{Binomial}(n = 50, \, p = 0{,}60)$:
+
+- Esperança Matemática ($E(X)$): $E(X) = n p = 50 \times 0{,}60 = \mathbf{30{,}00}$
+
+- Variância ($\text{Var}(X)$): $\text{Var}(X) = n p (1 - p) = 50 \times 0{,}60 \times 0{,}40 = \mathbf{12{,}00}$
+
+- Desvio Padrão ($DP(X)$): $DP(X) = \sqrt{\text{Var}(X)} = \sqrt{12} \approx \mathbf{3{,}4641}$
+
+- Moda ($\text{Moda}(X)$): calculada pelo piso de $(n + 1)p$: $\lfloor (50 + 1) \times 0{,}60 \rfloor = \lfloor 30{,}6 \rfloor = \mathbf{30}$.
+
+- Mediana ($\text{Mediana}(X)$):Como $np = 30$ é um número inteiro, a mediana coincide com a média: $\mathbf{30}$.
+
+- Coeficiente de Variação ($CV(X)$):$CV(X) = \frac{DP(X)}{E(X)} \times 100\% = \frac{3{,}4641}{30} \times 100\% \approx \mathbf{11{,}55\%}$
+
+No caso, $E(X) = 30$ indica que, em média, espera-se que um indivíduo dessa população possua $30$ dos $50$ marcadores em estado de homozigose (uma taxa média de $60\%$).
+
+Coeficiente de Variação ($CV = 11{,}55\%$): Indica baixa dispersão relativa em torno do número médio esperado de homozigotos. 
+
+:::
+
+### Resposta 15k
+::: {.resposta}
+
+Para essa, vamos calcular os quantis primeiro.
+
+``` {r Resposta 15k}
+
+#| collapse: true
+#| comment: ""
+
+# Determinação dos quantis teóricos via qbinom()
+ordens <- c(0.25, 0.50, 0.75, 0.95)
+quantis_teoricos <- qbinom(ordens, size = n_par, prob = p_par)
+
+names(quantis_teoricos) <- paste0("q_", ordens)
+print(quantis_teoricos)
+```
+
+- $q_{0{,}25} = \mathbf{28}$ locos
+
+- $q_{0{,}50} = \mathbf{30}$ locos
+
+- $q_{0{,}75} = \mathbf{32}$ locos
+
+- $q_{0{,}95} = \mathbf{36}$ locos
+
+A Mediana ($q_{0{,}50} = 30$) indica que $50\%$ dos indivíduos da população apresentam no máximo $30$ locos homozigotos no painel, os $50\%$ restantes apresentam $30$ ou mais locos. Já o $95º$ Percentil ($q_{0{,}95} = 36$) mostra que $95\%$ dos genótipos avaliados apresentam até $36$ locos homozigotos. Os depois 5% são os geneticamente mais endogâmicos da população.
+
+:::
+
+### Resposta 15l
+::: {.resposta}
+
+Vamos simular uma população de N = 1000 indivíduos genotipados para o painel de 50SNPs.
+
+```{r Resposta 15l}
+#| collapse: true
+#| comment: ""
+
+# Fixa semente para reprodutibilidade estrita
+set.seed(50)
+
+# Tamanho amostral da simulação (1000 genótipos)
+N_sim <- 1000
+
+# Geração da amostra aleatória
+amostra_sim <- rbinom(n = N_sim, size = n_par, prob = p_par)
+
+# Visualização das 20 primeiras observações simuladas
+head(amostra_sim, 20)
+```
+
+:::
+
+### Resposta 15m
+
+::: {.resposta}
+
+``` {r Resposta 15m}
+#| collapse: true
+#| comment: ""
+
+# Estimativas amostrais
+media_amostral <- mean(amostra_sim)
+var_amostral   <- var(amostra_sim)
+dp_amostral    <- sd(amostra_sim)
+
+# Teóricos
+media_teorica <- n_par * p_par
+var_teorica   <- n_par * p_par * (1 - p_par)
+dp_teorico    <- sqrt(var_teorica)
+
+# Tabela de comparação
+comparativo <- data.frame(
+  Medida = c("Média / Esperança", "Variância", "Desvio Padrão"),
+  `Valor Teórico` = c(media_teorica, var_teorica, dp_teorico),
+  `Valor Simulado (N=1000)` = c(media_amostral, var_amostral, dp_amostral),
+  `Erro Relativo (%)` = c(
+    abs(media_amostral - media_teorica) / media_teorica * 100,
+    abs(var_amostral - var_teorica) / var_teorica * 100,
+    abs(dp_amostral - dp_teorico) / dp_teorico * 100
+  ),
+  check.names = FALSE
+)
+
+knitr::kable(comparativo, digits = 4, align = "lccc")
+
+```
+
+A média simulada ($\approx 30{,}05$) e a variância simulada ($\approx 12{,}09$) possuem valores bem próximos dos valores teóricos ($E(X) = 30$ e $\text{Var}(X) = 12$). Isso era de se esperar, pois um grande N tende a convergir com o parâmetro populacional. O Professor Kaio brinca com isso com relação ao desempenho de alguns touros. Parece que tem alguns desses animais que tem mais de 30.000 filhos, então o professor brinca que já o parâmetro e não uma estimativa, dado o $n$.
+
+:::
+
+### Resposta 15n
+
+::: {.resposta}
+``` {r Resposta 15n}
+#| collapse: true
+#| comment: ""
+#| fig-cap: "Frequências relativas empíricas da amostra simulada (barras) sobrepostas às probabilidades teóricas da Binomial (linha vermelha com pontos)."
+
+# Frequências observadas na simulação
+tab_obs <- table(factor(amostra_sim, levels = 15:45)) / N_sim
+eixo_x <- 15:45
+
+# Gráfico de barras da amostra simulada
+bp <- barplot(tab_obs, col = "gray85", border = "gray40", las = 1,
+              main = "Comparação: Amostra Simulada vs. Distribuição Teórica",
+              xlab = "Número de locos homozigotos (x)",
+              ylab = "Frequência Relativa / Probabilidade",
+              ylim = c(0, max(prob_grid) * 1.15))
+
+# Curva teórica sobreposta
+prob_teorica_alinhada <- dbinom(eixo_x, size = n_par, prob = p_par)
+lines(bp, prob_teorica_alinhada, col = "red3", lwd = 2.5, type = "b", pch = 19, cex = 0.8)
+
+legend("topright", legend = c("Amostra Simulada (N = 1000)", "Distribuição Teórica Binomial"),
+       fill = c("gray85", NA), border = c("gray40", NA), lty = c(NA, 1),
+       pch = c(NA, 19), col = c(NA, "red3"), lwd = c(NA, 2), bty = "n")
+grid(nx = NA, ny = NULL, lty = 2, col = "gray80")
+```
+
+O histograma de frequências relativas obtido a partir dos $1.000$ genótipos gerados fica bem próximo em forma quanto à linha vermelha da distribuição teórica. As barras exibem a assimetria praticamente nula e o pico modal coincide em $x = 30$, por exemplo.
+
+:::
+
+### Resposta 15o
+
+
+::: {.resposta}
+
+No exercício desenvolvido os parâmetros populacionais ($n = 50$ e $p = 0{,}60$) eram conhecidos, portanto simulamos os valores a partir de algo já definido. Na vida real isso dificilmente existirá portanto teriámos que estimá-lo. No exemplo que escolhi, teríamos que genotipar todos os indivíduos estudados e depois seguir a estimação do parâmetro, o que poderíamos fazer de duas maneiras:
+
+- Pela estatística frequentista: nesse caso, o parâmetro em teoria é constante e seria estimado usando os métodos de acordo para estimá-lo.
+
+- Pela estatística bayesiana: aqui, o parâmetro é tratado como variável, então usaríamos a distribuição a priori conjugada (omo $p \sim \text{Beta}(\alpha, \beta)$) e iríamos atualizar esse conhecimento através dos dados observados, gerando a posterior.
+
+Teríamos, além disso, que testar para a independẽncia entre os marcadores.
 
 :::
