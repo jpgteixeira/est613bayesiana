@@ -737,18 +737,15 @@ Primeiramente, estruturamos a matriz de probabilidade conjunta:
 #| collapse: true
 #| comment: ""
 
-# Matriz de probabilidade conjunta P(T, D)
-# Linhas: Tratamentos (A, B, C) | Colunas: D (0, 1, 2)
 P_TD <- matrix(
-  c(1/12, 1/18, 1/36,   # A
-    3/18, 1/12, 1/18,   # B
-    4/36, 3/18, 3/12),  # C
+  c(1/12, 1/18, 1/36,
+    3/18, 1/12, 1/18,
+    4/36, 3/18, 3/12),
   nrow = 3, byrow = TRUE,
   dimnames = list(T = c("A", "B", "C"), D = c("0", "1", "2"))
 )
 
 P_TD
-
 ```
 
 ### Resposta 6a
@@ -1014,7 +1011,7 @@ $$ x = \{0, 1, 2, 3, 4\}$$
 
 
 ::: {.pergunta}
-8. Sejam X e Yvariáveis aleatórias contínuas bidimensionais, em que $X$ representa a proporção de plantas resistentes a uma determinada doença e Yrepresenta a proporção de plantas que apresentam alto rendimento de frutos. Suponha que a função densidade de probabilidade conjunta de $X$ e $Y$ seja dada por:
+8. Sejam X e Y variáveis aleatórias contínuas bidimensionais, em que $X$ representa a proporção de plantas resistentes a uma determinada doença e Y representa a proporção de plantas que apresentam alto rendimento de frutos. Suponha que a função densidade de probabilidade conjunta de $X$ e $Y$ seja dada por:
 
 $$f(x, y) = \begin{cases}
     4xy, & \text{se } 0 \le x \le 1 \text{ e } 0 \le y \le 1 \\ 
@@ -1023,6 +1020,7 @@ $$f(x, y) = \begin{cases}
 
 
 Pede-se:
+
 a. Determine as funções densidade de probabilidade marginal das variáveis $X$ e $Y$.
 
 b. Calcule a probabilidade de um campo experimental apresentar uma proporção de plantas resistentes à doença inferior a 0,4 e uma proporção de plantas com alto rendimento superior a 0,5.
@@ -1041,6 +1039,223 @@ e. Para a variável $Y$, determine as seguintes medidas:
 - coeficiente de variação ($CV$).
 
 f. Interprete, no contexto do problema, o significado da esperança matemática e do coeficiente de variação obtidos para $Y$.
+:::
+
+## Resposta 08
+
+### Resposta 8a
+
+::: {.resposta}
+Para construir as funções densidade de probabilidade marginal de cada variável, precisamos integrar a densidade conjunta para cada uma delas, retirando, assim, as respectivas influências.
+
+- Para a Variável X
+  $$ p(x) = \int_{0}^{1} 4xy \; dy  $$
+
+  ```{r Resposta 8a x}
+  #| collapse: true
+  #| comment: ""
+
+  # Função conjunta
+  f_conjunta <- "4*x*y"
+
+
+  # Pacote Ryacas, o qual não conhecia e foi sugerido pelo gemini
+  # Esse pacote serve para usar o YACAS (Yet Another Computer Algebra System)
+  # no sistema R, ou seja, escrever expressões utilizando essa sintaxe
+  # (novamente a qual eu não conhecia)
+
+  library(Ryacas)
+
+  res_x <- yac_str(paste0("Integrate(y, 0, 1)", f_conjunta))
+
+  expressao_8ax <- paste0("p(x) = ", res_x)
+
+  cat(expressao_8ax, "\n")
+  ```
+
+  Logo, a marginal de $X$ é $`r expressao_8ax`$.
+
+- Para a variável Y:
+
+    $$ p(y) = \int_{0}^{1} 4xy \; dx  $$
+
+  ```{r Resposta 8a y}
+  #| collapse: true
+  #| comment: ""
+
+  res_y <- yac_str(paste0("Integrate(x, 0, 1)", f_conjunta))
+
+  expressao_8ay <- paste0("p(y) = ", res_y)
+
+  cat(expressao_8ay, "\n")
+  ```
+
+  Logo, a marginal de $Y$ é $`r expressao_8ay`$.
+
+
+:::
+
+### Resposta 8b
+
+::: {.resposta}
+Para essa questão, precisamos fazer a integral dupla com no intervalo solicitado, ou seja:
+
+$$P(X < 0{,}4, Y > 0{,}5) = \int_{0}^{0{,}4} \int_{0{,}5}^{1} 4xy \; dy \, dx$$
+
+```{r Resposta 8b}
+#| collapse: true
+#| comment: ""
+
+# No Yacas, podemos encadear os operadores Integrate para resolver a integral dupla:
+# Integrando primeiro em y (de 1/2 a 1) e depois em x (de 0 a 4/10):
+comando_8b <- paste0("Integrate(x, 0, 4/10) Integrate(y, 1/2, 1) ", f_conjunta)
+
+res_8b_fracao <- yac_str(paste0("Integrate(x, 0, 4/10) Integrate(y, 1/2, 1) ", f_conjunta))
+
+# Convertendo a fração simbólica obtida pelo Yacas em valor numérico no R:
+prob_8b <- eval(parse(text = res_8b_fracao))
+
+cat("P(X < 0.4, Y > 0.5) [fração]  =", res_8b_fracao, "\n")
+cat("P(X < 0.4, Y > 0.5) [decimal] =", prob_8b, "\n")
+```
+
+Portanto, a probabilidade é de $`r res_8b_fracao`$ (ou $`r prob_8b * 100`\%$)
+
+:::
+
+### Resposta 8c
+
+::: {.resposta}
+A função densidade de probabilidade condicional de $Y$ dado que $X = x$ é definida por: 
+
+$$p(x|y) = \frac{p(x,y)}{p(y)}, \quad p(y)>0$$
+
+Podemos recorer à biblioteca ryacas novamente.
+
+```{r Resposta 8c}
+#| collapse: true
+#| comment: ""
+
+res_8c <- yac_str(paste0("Simplify((", f_conjunta, ") / (", res_x, "))"))
+
+expressao_8c <- paste0("p(y|x) = ", res_8c)
+
+cat("p(y|x) = ", res_8c, "\n")
+```
+
+Portanto, a densidade condicional é:  $$p(y|x) = \begin{cases} `r res_8c`, & \text{se } 0 \le y \le 1 \\ 0, & \text{caso contrário} \end{cases}$$
+
+Percebe-se que a condicional está com a mesma expressão da da marginal
+
+:::
+
+### Resposta 8d
+
+::: {.resposta}
+Como $p(y|x) = p(y) = `r res_8c`$, entende-se que as variáveis são independentes.
+:::
+
+### Resposta 8e
+
+::: {.resposta}
+Utilizando a densidade marginal obtida para $Y$, $f(y) = 2y$, vamos calcular cada uma das medidas no chunck abaixo, levando em conta as seguintes expressões:
+
+- Esperança matemática:
+$$E(Y) = \int_{a}^b yp(y)dy$$
+
+- mediana:
+
+$$\int_{a}^{Md} p(y)dy = \int_{Md}^{b} p(y)d(y) = \frac{1}{2}$$
+
+- moda:
+
+$$M_o = max(py(y))$$
+
+
+"Como as funções p y e p x são crescentes em seus respectivos intervalos, o ponto que maximiza cada função será o último valor do intervalo, ou seja:"
+
+
+- variância:
+
+$$V(Y) = E(Y^2) - [E(Y)^2] \quad \text{e} \quad E(Y^2) = \int_a^b y^2p(y)dy$$
+
+- desvio-padrão:
+
+$$DP(Y) = \sqrt{V(Y)}$$
+
+- $CV$:
+
+$$CV_Y = \frac{DP(Y)}{E(Y)}$$
+
+
+```{r Resposta 8e}
+#| collapse: true
+#| comment: ""
+
+# Limites dada a questão - 0 a 1
+a <- 0
+b <- 1
+
+# 1. Esperança E(Y) = integral_a^b y * p(y) dy
+cmd_EY <- paste0("Integrate(y, ", a, ", ", b, ") y * (", res_y, ")")
+res_EY_fracao <- yac_str(cmd_EY)
+val_EY <- eval(parse(text = res_EY_fracao))
+
+# 2. E(Y^2) = integral_a^b y^2 * p(y) dy
+cmd_EY2 <- paste0("Integrate(y, ", a, ", ", b, ") (y^2) * (", res_y, ")")
+res_EY2_fracao <- yac_str(cmd_EY2)
+val_EY2 <- eval(parse(text = res_EY2_fracao))
+
+# 3. Variância V(Y) = E(Y^2) - [E(Y)]^2
+cmd_VY <- paste0("Simplify((", res_EY2_fracao, ") - ((", res_EY_fracao, ")^2))")
+res_VY_fracao <- yac_str(cmd_VY)
+val_VY <- eval(parse(text = res_VY_fracao))
+
+# 4. Desvio-padrão DP(Y) = sqrt(V(Y))
+val_DPY <- sqrt(val_VY)
+
+# 5. Coeficiente de Variação CV_Y = DP(Y) / E(Y)
+val_CVY <- val_DPY / val_EY
+
+# 6. Mediana: integral_0^Md 2y dy = 1/2 => [y^2]_0^Md = 1/2 => Md = sqrt(1/2)
+integral_acumulada <- yac_str("Integrate(y, 0, Md) 2*y")
+cmd_solve <- paste0("Solve(", integral_acumulada, " == 1/2, Md)")
+yac_Md <- yac_str(cmd_solve)
+yac_Md
+# Retornou uma expressão, temos que pegar a raiz correta
+equacoes <- unlist(strsplit(gsub("[{}]", "", yac_Md), ",\\s*"))
+equacoes
+# pegar o lado direito
+raizes_str <- sapply(strsplit(equacoes, "=="), function(x) trimws(x[2]))
+raizes_str
+# Pegamos somente a positiva agora
+val_Md <- eval(parse(text = gsub("Sqrt", "sqrt", raizes_str[1])))
+# 7. Moda: máximo no suporte [0, 1]
+val_Mo <- b
+
+# Exibição dos resultados calculados
+cat("1. Esperança E(Y):      ", res_EY_fracao,  "=", round(val_EY, 4), "\n")
+cat("2. Mediana (Md): = ", round(val_Md, 4), "\n")
+cat("3. Moda (Mo):            ", val_Mo, "\n")
+cat("4. Variância V(Y):      ", res_VY_fracao,  "=", round(val_VY, 4), "\n")
+cat("5. Desvio-Padrão DP(Y):  sqrt(2)/6    =", round(val_DPY, 4), "\n")
+cat("6. Coef. Variação (CV):  sqrt(2)/4    =", round(val_CVY * 100, 2), "%\n")
+```
+
+Portanto, temos:
+
+- **Esperança Matemática:** $E(Y) = `r res_EY_fracao` \approx `r round(val_EY, 4)`$
+
+- **Mediana:** $Md = \approx `r round(val_Md, 4)`$
+
+- **Moda:** $M_o = `r val_Mo`$, ponto máximo = 2
+
+- **Variância:** $V(Y) = `r res_VY_fracao` \approx `r round(val_VY, 4)`$
+
+- **Desvio-Padrão:** $DP(Y) \approx `r round(val_DPY, 4)`$
+
+- **Coeficiente de Variação:** $CV_Y \approx `r round(val_CVY * 100, 2)`\%$
+
 :::
 
 ::: {.pergunta}
@@ -1068,6 +1283,109 @@ c) Estabeleça a relação entre as variáveis aleatórias definidas nos itens i
 
 d) Explique por que, ao utilizar a distribuição Binomial Negativa em uma análise estatística ou em um software, é importante informar explicitamente a parametrização adotada.
 :::
+
+## Resposta 09
+
+### Resposta 9a
+
+::: {.resposta}
+
+Considerando uma sequência de ensaios de Bernoulli independentes, com probabilidade constante sucesso $p \in (0, 1)$ e probabilidade de falha $q = 1 - p$. O número de eventos pode ser representado por $r$ ($r \in \{1, 2, 3, \dots\}$).
+
+#### Reposta 9a i: $Y$ representa o número de falhas observadas antes do $r$-ésimo sucesso.
+
+Como o primeiro sucesso pode ocorrer imediatamente sem nenhuma falha anterior, ou podem ocorrer infinitas falhas, então Y está dentro do espaço amostral S podendo assumir os seguintes valores:
+
+$$\mathcal{S}_Y = \{0, 1, 2, 3, \dots\}$$
+
+Nesse caso, para a função de Probabilidade ($P(Y = y)$), podemos pensar que haverá uma soma de cada fracasso $y$ até o ensaio sucesso, portanto em y+r teremos o sucesso, fechando a série. Logo, haverá $y + r - 1$ ensaios antes desse sucesso, devem ocorrer exatamente $r - 1 \, \text{sucessos} = y \,\text{falhas}$:
+
+$$P(Y = y) = \binom{y + r - 1}{r - 1} p^r (1 - p)^y = \binom{y + r - 1}{y} p^r (1 - p)^y, \quad y = 0, 1, 2, \dots$$
+
+onde:
+
+$r$: número de sucessos requeridos
+
+$p$: probabilidade de sucesso em cada ensaio individual ($0 < p < 1$).
+
+#### Resposta 9a ii: $Y$ representa o número total de ensaios até a ocorrência do $r$-ésimo sucesso
+
+Para obter $r$ sucessos, são necessários no mínimo $r$ ensaios, considerando que todos eles sucessos consecutivos:
+
+$$\mathcal{S}_Y = \{r, r + 1, r + 2, \dots\}$$
+
+Considerando esse Y, a Função de Probabilidade ($P(Y = y)$), podemos pensar que o total de ensaios seja $y$, logo o último ensaio precisa ser o $r$-ésimo sucesso. Nesse cenário, antes dele tivemos $y - 1$ ensaios, nos quais ocorreram $r - 1$ sucessos e $y - r$ falhas:
+
+$$P(Y = y) = \binom{y - 1}{r - 1} p^r (1 - p)^{y - r}, \quad y = r, r + 1, r + 2, \dots$$
+
+onde:
+
+$r$: número prefixado de sucessos requeridos ($r \in \mathbb{N}^*$).
+
+$p$: probabilidade de sucesso em cada ensaio individual ($0 < p < 1$).Item (iii): 
+
+#### Resposta 9a iii: $Y$ representa o número de sucessos observados antes da ocorrência da $r$-ésima falha
+
+No último cenário, temos que podem ocorrer zero ou mais sucessos antes de atingir a $r$-éisima falha:
+
+$$\mathcal{S}_Y = \{0, 1, 2, 3, \dots\}$$
+
+Aqui, para o cálculo da Função de Probabilidade ($P(Y = y)$) é necessário levar em conta que o evento que encerra o experimento é a falha ($1 - p$). Ao contrário do Item i, o último ensaio ($y + r$) é a $r$-ésima falha. Nos $y + r - 1$ ensaios anteriores, ocorreram $r - 1$ falhas e $y$ sucessos:
+
+$$P(Y = y) = \binom{y + r - 1}{r - 1} (1 - p)^r p^y = \binom{y + r - 1}{y} (1 - p)^r p^y, \quad y = 0, 1, 2, \dots$$
+
+onde:
+
+$r$: número prefixado de falhas requeridas;
+
+$p$: probabilidade de sucesso em cada ensaio ($0 < p < 1$), portanto há uma probabilidade $1 - p$ de falha.
+
+:::
+
+### Respota 9b
+
+::: {.resposta}
+
+- Situação i: $Y$ representa o número de falhas observadas antes do $r$-ésimo sucesso.
+
+  Ocorrência de uma espécie de ave ameaçada (portanto rara) dentro de uma área específica
+
+- Situação ii: $Y$ representa o número total de ensaios até a ocorrência do $r$-ésimo sucesso
+
+  Quantos amostrei até encontrar aquela espécie de ave em uma região
+
+- Situação iii: $Y$ representa o número de sucessos observados antes da ocorrência da $r$-ésima falha
+
+  Quantos territórios não possuem determinada espécie de ave comum.
+
+:::
+
+### Resposta 9c
+
+::: {.resposta}
+
+O número total de ensaios realizados ($Y_2$) é composto pela soma dos sucessos obtidos com as falhas observadas:
+
+$$\text{Total de ensaios} = (\text{Número de falhas}) + (\text{Número de sucessos})$$
+
+Ainda desse contexto, o número de sucessos é igual a $r$. Portanto, a relação entre as variáveis é:
+
+$$Y_2 = Y_1 + r  \quad  \text{ou} \quad Y_1 = Y_2 - r$$
+
+:::
+
+### Resposta 9d
+
+::: {.resposta}
+
+Quanndo se usa um software estatístico, é importante informar a parametrização, pois dessa maneira é possível entender a natureza da variável. Por vezes, ela pode assumir o valor de zero, por vezes não.
+
+Além disso, diferentes pacotes, linguagens ou softwares podem ter parametrização distintas, portanto pode ser que um pesquisador entenda que o valor de p é sucesso, mas na verdade para o software era sera o fracasso (1-p).
+
+Por fim, em conversa com a IA Gemini, ela discorreu sobre um ponto que eu não tinha conhecimento. No caso da utilização de GLM, a Binomial Negativa costuma ser parametrizada pela média e pelo parâmetro de dispesão $\theta$. Nesse caso, fica inviável fazer modelagens ou calcular demais parâmetros sem definir qual é o Y.
+
+:::
+
 
 ::: {.pergunta}
 10. Para cada uma das situações a seguir:

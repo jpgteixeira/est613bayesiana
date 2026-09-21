@@ -3167,22 +3167,15 @@ As probabilidade de um ponto específico é zero, logo, é necessário atribuir 
 <p>Primeiramente, estruturamos a matriz de probabilidade conjunta:</p>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Matriz de probabilidade conjunta P(T, D)</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Linhas: Tratamentos (A, B, C) | Colunas: D (0, 1, 2)</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>P_TD <span class="ot">&lt;-</span> <span class="fu">matrix</span>(</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">c</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">12</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">36</span>,   <span class="co"># A</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">3</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">12</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">18</span>,   <span class="co"># B</span></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">4</span><span class="sc">/</span><span class="dv">36</span>, <span class="dv">3</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">3</span><span class="sc">/</span><span class="dv">12</span>),  <span class="co"># C</span></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">nrow =</span> <span class="dv">3</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">dimnames =</span> <span class="fu">list</span>(<span class="at">T =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>), <span class="at">D =</span> <span class="fu">c</span>(<span class="st">&quot;0&quot;</span>, <span class="st">&quot;1&quot;</span>, <span class="st">&quot;2&quot;</span>))</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>P_TD</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>   D</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>T            <span class="dv">0</span>          <span class="dv">1</span>          <span class="dv">2</span></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  A <span class="fl">0.08333333</span> <span class="fl">0.05555556</span> <span class="fl">0.02777778</span></span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  B <span class="fl">0.16666667</span> <span class="fl">0.08333333</span> <span class="fl">0.05555556</span></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  C <span class="fl">0.11111111</span> <span class="fl">0.16666667</span> <span class="fl">0.25000000</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>P_TD <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">12</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">36</span>, <span class="dv">3</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">12</span>, <span class="dv">1</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">4</span><span class="sc">/</span><span class="dv">36</span>, <span class="dv">3</span><span class="sc">/</span><span class="dv">18</span>, <span class="dv">3</span><span class="sc">/</span><span class="dv">12</span>), <span class="at">nrow =</span> <span class="dv">3</span>,</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">byrow =</span> <span class="cn">TRUE</span>, <span class="at">dimnames =</span> <span class="fu">list</span>(<span class="at">T =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>), <span class="at">D =</span> <span class="fu">c</span>(<span class="st">&quot;0&quot;</span>, <span class="st">&quot;1&quot;</span>, <span class="st">&quot;2&quot;</span>)))</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>P_TD</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>   D</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>T            <span class="dv">0</span>          <span class="dv">1</span>          <span class="dv">2</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  A <span class="fl">0.08333333</span> <span class="fl">0.05555556</span> <span class="fl">0.02777778</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  B <span class="fl">0.16666667</span> <span class="fl">0.08333333</span> <span class="fl">0.05555556</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  C <span class="fl">0.11111111</span> <span class="fl">0.16666667</span> <span class="fl">0.25000000</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="resposta-6a" class="level3">
 <h3 class="anchored" data-anchor-id="resposta-6a">Resposta 6a</h3>
@@ -3431,14 +3424,15 @@ As probabilidade de um ponto específico é zero, logo, é necessário atribuir 
 </div>
 <div class="pergunta">
 <ol start="8" type="1">
-<li>Sejam X e Yvariáveis aleatórias contínuas bidimensionais, em que <span class="math inline">\(X\)</span> representa a proporção de plantas resistentes a uma determinada doença e Yrepresenta a proporção de plantas que apresentam alto rendimento de frutos. Suponha que a função densidade de probabilidade conjunta de <span class="math inline">\(X\)</span> e <span class="math inline">\(Y\)</span> seja dada por:</li>
+<li>Sejam X e Y variáveis aleatórias contínuas bidimensionais, em que <span class="math inline">\(X\)</span> representa a proporção de plantas resistentes a uma determinada doença e Y representa a proporção de plantas que apresentam alto rendimento de frutos. Suponha que a função densidade de probabilidade conjunta de <span class="math inline">\(X\)</span> e <span class="math inline">\(Y\)</span> seja dada por:</li>
 </ol>
 <p><span class="math display">\[f(x, y) = \begin{cases}
     4xy, &amp; \text{se } 0 \le x \le 1 \text{ e } 0 \le y \le 1 \\
 0, &amp; \text{caso contrário}
 \end{cases}\]</span></p>
-<p>Pede-se: a. Determine as funções densidade de probabilidade marginal das variáveis <span class="math inline">\(X\)</span> e <span class="math inline">\(Y\)</span>.</p>
-<ol start="2" type="a">
+<p>Pede-se:</p>
+<ol type="a">
+<li><p>Determine as funções densidade de probabilidade marginal das variáveis <span class="math inline">\(X\)</span> e <span class="math inline">\(Y\)</span>.</p></li>
 <li><p>Calcule a probabilidade de um campo experimental apresentar uma proporção de plantas resistentes à doença inferior a 0,4 e uma proporção de plantas com alto rendimento superior a 0,5.</p></li>
 <li><p>Determine a função densidade de probabilidade condicional de <span class="math inline">\(Y\)</span> dado que <span class="math inline">\(X = x\)</span>.</p></li>
 <li><p>Verifique se <span class="math inline">\(X\)</span> e <span class="math inline">\(Y\)</span> são independentes. Justifique.</p></li>
@@ -3455,6 +3449,192 @@ As probabilidade de um ponto específico é zero, logo, é necessário atribuir 
 <ol start="6" type="a">
 <li>Interprete, no contexto do problema, o significado da esperança matemática e do coeficiente de variação obtidos para <span class="math inline">\(Y\)</span>.</li>
 </ol>
+</div>
+</section>
+</section>
+<section id="resposta-08" class="level2">
+<h2 class="anchored" data-anchor-id="resposta-08">Resposta 08</h2>
+<section id="resposta-8a" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-8a">Resposta 8a</h3>
+<div class="resposta">
+<p>Para construir as funções densidade de probabilidade marginal de cada variável, precisamos integrar a densidade conjunta para cada uma delas, retirando, assim, as respectivas influências.</p>
+<ul>
+<li><p>Para a Variável X <span class="math display">\[ p(x) = \int_{0}^{1} 4xy \; dy  \]</span></p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Função conjunta</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>f_conjunta <span class="ot">&lt;-</span> <span class="st">&quot;4*x*y&quot;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Pacote Ryacas, o qual não conhecia e foi sugerido pelo gemini Esse pacote</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="co"># serve para usar o YACAS (Yet Another Computer Algebra System) no sistema R,</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a><span class="co"># ou seja, escrever expressões utilizando essa sintaxe (novamente a qual eu não</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="co"># conhecia)</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Ryacas)</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>res_x <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(<span class="fu">paste0</span>(<span class="st">&quot;Integrate(y, 0, 1)&quot;</span>, f_conjunta))</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>expressao_8ax <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;p(x) = &quot;</span>, res_x)</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(expressao_8ax, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a><span class="fu">p</span>(x) <span class="ot">=</span> <span class="dv">2</span><span class="sc">*</span>x </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Logo, a marginal de <span class="math inline">\(X\)</span> é <span class="math inline">\(p(x) = 2*x\)</span>.</p></li>
+<li><p>Para a variável Y:</p>
+<p><span class="math display">\[ p(y) = \int_{0}^{1} 4xy \; dx  \]</span></p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>res_y <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(<span class="fu">paste0</span>(<span class="st">&quot;Integrate(x, 0, 1)&quot;</span>, f_conjunta))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>expressao_8ay <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;p(y) = &quot;</span>, res_y)</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(expressao_8ay, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="fu">p</span>(y) <span class="ot">=</span> <span class="dv">2</span><span class="sc">*</span>y </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Logo, a marginal de <span class="math inline">\(Y\)</span> é <span class="math inline">\(p(y) = 2*y\)</span>.</p></li>
+</ul>
+</div>
+</section>
+<section id="resposta-8b" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-8b">Resposta 8b</h3>
+<div class="resposta">
+<p>Para essa questão, precisamos fazer a integral dupla com no intervalo solicitado, ou seja:</p>
+<p><span class="math display">\[P(X &lt; 0{,}4, Y &gt; 0{,}5) = \int_{0}^{0{,}4} \int_{0{,}5}^{1} 4xy \; dy \, dx\]</span></p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># No Yacas, podemos encadear os operadores Integrate para resolver a integral</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="co"># dupla: Integrando primeiro em y (de 1/2 a 1) e depois em x (de 0 a 4/10):</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>comando_8b <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;Integrate(x, 0, 4/10) Integrate(y, 1/2, 1) &quot;</span>, f_conjunta)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>res_8b_fracao <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(<span class="fu">paste0</span>(<span class="st">&quot;Integrate(x, 0, 4/10) Integrate(y, 1/2, 1) &quot;</span>, f_conjunta))</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Convertendo a fração simbólica obtida pelo Yacas em valor numérico no R:</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>prob_8b <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> res_8b_fracao))</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;P(X &lt; 0.4, Y &gt; 0.5) [fração]  =&quot;</span>, res_8b_fracao, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="fu">P</span>(X <span class="sc">&lt;</span> <span class="fl">0.4</span>, Y <span class="sc">&gt;</span> <span class="fl">0.5</span>) [fração]  <span class="ot">=</span> <span class="dv">3</span><span class="sc">/</span><span class="dv">25</span> </span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;P(X &lt; 0.4, Y &gt; 0.5) [decimal] =&quot;</span>, prob_8b, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a><span class="fu">P</span>(X <span class="sc">&lt;</span> <span class="fl">0.4</span>, Y <span class="sc">&gt;</span> <span class="fl">0.5</span>) [decimal] <span class="ot">=</span> <span class="fl">0.12</span> </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Portanto, a probabilidade é de <span class="math inline">\(3/25\)</span> (ou <span class="math inline">\(12\%\)</span>)</p>
+</div>
+</section>
+<section id="resposta-8c" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-8c">Resposta 8c</h3>
+<div class="resposta">
+<p>A função densidade de probabilidade condicional de <span class="math inline">\(Y\)</span> dado que <span class="math inline">\(X = x\)</span> é definida por:</p>
+<p><span class="math display">\[p(x|y) = \frac{p(x,y)}{p(y)}, \quad p(y)&gt;0\]</span></p>
+<p>Podemos recorer à biblioteca ryacas novamente.</p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>res_8c <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(<span class="fu">paste0</span>(<span class="st">&quot;Simplify((&quot;</span>, f_conjunta, <span class="st">&quot;) / (&quot;</span>, res_x, <span class="st">&quot;))&quot;</span>))</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>expressao_8c <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;p(y|x) = &quot;</span>, res_8c)</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;p(y|x) = &quot;</span>, res_8c, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="fu">p</span>(y<span class="sc">|</span>x) <span class="ot">=</span>  <span class="dv">2</span><span class="sc">*</span>y </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Portanto, a densidade condicional é: <span class="math display">\[p(y|x) = \begin{cases} 2*y, &amp; \text{se } 0 \le y \le 1 \\ 0, &amp; \text{caso contrário} \end{cases}\]</span></p>
+<p>Percebe-se que a condicional está com a mesma expressão da da marginal</p>
+</div>
+</section>
+<section id="resposta-8d" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-8d">Resposta 8d</h3>
+<div class="resposta">
+<p>Como <span class="math inline">\(p(y|x) = p(y) = 2*y\)</span>, entende-se que as variáveis são independentes.</p>
+</div>
+</section>
+<section id="resposta-8e" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-8e">Resposta 8e</h3>
+<div class="resposta">
+<p>Utilizando a densidade marginal obtida para <span class="math inline">\(Y\)</span>, <span class="math inline">\(f(y) = 2y\)</span>, vamos calcular cada uma das medidas no chunck abaixo, levando em conta as seguintes expressões:</p>
+<ul>
+<li><p>Esperança matemática: <span class="math display">\[E(Y) = \int_{a}^b yp(y)dy\]</span></p></li>
+<li><p>mediana:</p></li>
+</ul>
+<p><span class="math display">\[\int_{a}^{Md} p(y)dy = \int_{Md}^{b} p(y)d(y) = \frac{1}{2}\]</span></p>
+<ul>
+<li>moda:</li>
+</ul>
+<p><span class="math display">\[M_o = max(py(y))\]</span></p>
+<p>“Como as funções p y e p x são crescentes em seus respectivos intervalos, o ponto que maximiza cada função será o último valor do intervalo, ou seja:”</p>
+<ul>
+<li>variância:</li>
+</ul>
+<p><span class="math display">\[V(Y) = E(Y^2) - [E(Y)^2] \quad \text{e} \quad E(Y^2) = \int_a^b y^2p(y)dy\]</span></p>
+<ul>
+<li>desvio-padrão:</li>
+</ul>
+<p><span class="math display">\[DP(Y) = \sqrt{V(Y)}\]</span></p>
+<ul>
+<li><span class="math inline">\(CV\)</span>:</li>
+</ul>
+<p><span class="math display">\[CV_Y = \frac{DP(Y)}{E(Y)}\]</span></p>
+<div class="cell" data-layout-align="center">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Limites dada a questão - 0 a 1</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Esperança E(Y) = integral_a^b y * p(y) dy</span></span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>cmd_EY <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;Integrate(y, &quot;</span>, a, <span class="st">&quot;, &quot;</span>, b, <span class="st">&quot;) y * (&quot;</span>, res_y, <span class="st">&quot;)&quot;</span>)</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>res_EY_fracao <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(cmd_EY)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>val_EY <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> res_EY_fracao))</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. E(Y^2) = integral_a^b y^2 * p(y) dy</span></span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>cmd_EY2 <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;Integrate(y, &quot;</span>, a, <span class="st">&quot;, &quot;</span>, b, <span class="st">&quot;) (y^2) * (&quot;</span>, res_y, <span class="st">&quot;)&quot;</span>)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>res_EY2_fracao <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(cmd_EY2)</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>val_EY2 <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> res_EY2_fracao))</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Variância V(Y) = E(Y^2) - [E(Y)]^2</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>cmd_VY <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;Simplify((&quot;</span>, res_EY2_fracao, <span class="st">&quot;) - ((&quot;</span>, res_EY_fracao, <span class="st">&quot;)^2))&quot;</span>)</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>res_VY_fracao <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(cmd_VY)</span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>val_VY <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> res_VY_fracao))</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Desvio-padrão DP(Y) = sqrt(V(Y))</span></span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>val_DPY <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(val_VY)</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Coeficiente de Variação CV_Y = DP(Y) / E(Y)</span></span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>val_CVY <span class="ot">&lt;-</span> val_DPY<span class="sc">/</span>val_EY</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. Mediana: integral_0^Md 2y dy = 1/2 =&gt; [y^2]_0^Md = 1/2 =&gt; Md = sqrt(1/2)</span></span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>integral_acumulada <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(<span class="st">&quot;Integrate(y, 0, Md) 2*y&quot;</span>)</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>cmd_solve <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;Solve(&quot;</span>, integral_acumulada, <span class="st">&quot; == 1/2, Md)&quot;</span>)</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>yac_Md <span class="ot">&lt;-</span> <span class="fu">yac_str</span>(cmd_solve)</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>yac_Md</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">&quot;{Md==Sqrt(1/2),Md== -Sqrt(1/2)}&quot;</span></span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Retornou uma expressão, temos que pegar a raiz correta</span></span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a>equacoes <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">strsplit</span>(<span class="fu">gsub</span>(<span class="st">&quot;[{}]&quot;</span>, <span class="st">&quot;&quot;</span>, yac_Md), <span class="st">&quot;,</span><span class="sc">\\</span><span class="st">s*&quot;</span>))</span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>equacoes</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">&quot;Md==Sqrt(1/2)&quot;</span>   <span class="st">&quot;Md== -Sqrt(1/2)&quot;</span></span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a><span class="co"># pegar o lado direito</span></span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a>raizes_str <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="fu">strsplit</span>(equacoes, <span class="st">&quot;==&quot;</span>), <span class="cf">function</span>(x) <span class="fu">trimws</span>(x[<span class="dv">2</span>]))</span>
+<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a>raizes_str</span>
+<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>[<span class="dv">1</span>] <span class="st">&quot;Sqrt(1/2)&quot;</span>  <span class="st">&quot;-Sqrt(1/2)&quot;</span></span>
+<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Pegamos somente a positiva agora</span></span>
+<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a>val_Md <span class="ot">&lt;-</span> <span class="fu">eval</span>(<span class="fu">parse</span>(<span class="at">text =</span> <span class="fu">gsub</span>(<span class="st">&quot;Sqrt&quot;</span>, <span class="st">&quot;sqrt&quot;</span>, raizes_str[<span class="dv">1</span>])))</span>
+<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a><span class="co"># 7. Moda: máximo no suporte [0, 1]</span></span>
+<span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a>val_Mo <span class="ot">&lt;-</span> b</span>
+<span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Exibição dos resultados calculados</span></span>
+<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;1. Esperança E(Y):      &quot;</span>, res_EY_fracao, <span class="st">&quot;=&quot;</span>, <span class="fu">round</span>(val_EY, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a><span class="fl">1.</span> Esperança <span class="fu">E</span>(Y)<span class="sc">:</span>       <span class="dv">2</span><span class="sc">/</span><span class="dv">3</span> <span class="ot">=</span> <span class="fl">0.6667</span> </span>
+<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;2. Mediana (Md): = &quot;</span>, <span class="fu">round</span>(val_Md, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a><span class="fl">2.</span> <span class="fu">Mediana</span> (Md)<span class="sc">:</span> <span class="er">=</span>  <span class="fl">0.7071</span> </span>
+<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;3. Moda (Mo):            &quot;</span>, val_Mo, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a><span class="fl">3.</span> <span class="fu">Moda</span> (Mo)<span class="sc">:</span>             <span class="dv">1</span> </span>
+<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;4. Variância V(Y):      &quot;</span>, res_VY_fracao, <span class="st">&quot;=&quot;</span>, <span class="fu">round</span>(val_VY, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a><span class="fl">4.</span> Variância <span class="fu">V</span>(Y)<span class="sc">:</span>       <span class="dv">1</span><span class="sc">/</span><span class="dv">18</span> <span class="ot">=</span> <span class="fl">0.0556</span> </span>
+<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;5. Desvio-Padrão DP(Y):  sqrt(2)/6    =&quot;</span>, <span class="fu">round</span>(val_DPY, <span class="dv">4</span>), <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a><span class="fl">5.</span> Desvio<span class="sc">-</span>Padrão <span class="fu">DP</span>(Y)<span class="sc">:</span>  <span class="fu">sqrt</span>(<span class="dv">2</span>)<span class="sc">/</span><span class="dv">6</span>    <span class="ot">=</span> <span class="fl">0.2357</span> </span>
+<span id="cb25-56"><a href="#cb25-56" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;6. Coef. Variação (CV):  sqrt(2)/4    =&quot;</span>, <span class="fu">round</span>(val_CVY <span class="sc">*</span> <span class="dv">100</span>, <span class="dv">2</span>), <span class="st">&quot;%</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb25-57"><a href="#cb25-57" aria-hidden="true" tabindex="-1"></a><span class="fl">6.</span> Coef. Variação (CV)<span class="sc">:</span>  <span class="fu">sqrt</span>(<span class="dv">2</span>)<span class="sc">/</span><span class="dv">4</span>    <span class="ot">=</span> <span class="fl">35.36</span> %</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Portanto, temos:</p>
+<ul>
+<li><p><strong>Esperança Matemática:</strong> <span class="math inline">\(E(Y) = 2/3 \approx 0.6667\)</span></p></li>
+<li><p><strong>Mediana:</strong> <span class="math inline">\(Md = \approx 0.7071\)</span></p></li>
+<li><p><strong>Moda:</strong> <span class="math inline">\(M_o = 1\)</span>, ponto máximo = 2</p></li>
+<li><p><strong>Variância:</strong> <span class="math inline">\(V(Y) = 1/18 \approx 0.0556\)</span></p></li>
+<li><p><strong>Desvio-Padrão:</strong> <span class="math inline">\(DP(Y) \approx 0.2357\)</span></p></li>
+<li><p><strong>Coeficiente de Variação:</strong> <span class="math inline">\(CV_Y \approx 35.36\%\)</span></p></li>
+</ul>
 </div>
 <div class="pergunta">
 <ol start="9" type="1">
@@ -3479,6 +3659,75 @@ As probabilidade de um ponto específico é zero, logo, é necessário atribuir 
 <li><p>Estabeleça a relação entre as variáveis aleatórias definidas nos itens i e ii. Se Y1 representa o número de falhas antes do r-ésimo sucesso e Y2 representa o número total de ensaios até o r-ésimo sucesso, expresse Y2 em função de Y1 e r.</p></li>
 <li><p>Explique por que, ao utilizar a distribuição Binomial Negativa em uma análise estatística ou em um software, é importante informar explicitamente a parametrização adotada.</p></li>
 </ol>
+</div>
+</section>
+</section>
+<section id="resposta-09" class="level2">
+<h2 class="anchored" data-anchor-id="resposta-09">Resposta 09</h2>
+<section id="resposta-9a" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-9a">Resposta 9a</h3>
+<div class="resposta">
+<p>Considerando uma sequência de ensaios de Bernoulli independentes, com probabilidade constante sucesso <span class="math inline">\(p \in (0, 1)\)</span> e probabilidade de falha <span class="math inline">\(q = 1 - p\)</span>. O número de eventos pode ser representado por <span class="math inline">\(r\)</span> (<span class="math inline">\(r \in \{1, 2, 3, \dots\}\)</span>).</p>
+<section id="reposta-9a-i-y-representa-o-número-de-falhas-observadas-antes-do-r-ésimo-sucesso." class="level4">
+<h4 class="anchored" data-anchor-id="reposta-9a-i-y-representa-o-número-de-falhas-observadas-antes-do-r-ésimo-sucesso.">Reposta 9a i: <span class="math inline">\(Y\)</span> representa o número de falhas observadas antes do <span class="math inline">\(r\)</span>-ésimo sucesso.</h4>
+<p>Como o primeiro sucesso pode ocorrer imediatamente sem nenhuma falha anterior, ou podem ocorrer infinitas falhas, então Y está dentro do espaço amostral S podendo assumir os seguintes valores:</p>
+<p><span class="math display">\[\mathcal{S}_Y = \{0, 1, 2, 3, \dots\}\]</span></p>
+<p>Nesse caso, para a função de Probabilidade (<span class="math inline">\(P(Y = y)\)</span>), podemos pensar que haverá uma soma de cada fracasso <span class="math inline">\(y\)</span> até o ensaio sucesso, portanto em y+r teremos o sucesso, fechando a série. Logo, haverá <span class="math inline">\(y + r - 1\)</span> ensaios antes desse sucesso, devem ocorrer exatamente <span class="math inline">\(r - 1 \, \text{sucessos} = y \,\text{falhas}\)</span>:</p>
+<p><span class="math display">\[P(Y = y) = \binom{y + r - 1}{r - 1} p^r (1 - p)^y = \binom{y + r - 1}{y} p^r (1 - p)^y, \quad y = 0, 1, 2, \dots\]</span></p>
+<p>onde:</p>
+<p><span class="math inline">\(r\)</span>: número de sucessos requeridos</p>
+<p><span class="math inline">\(p\)</span>: probabilidade de sucesso em cada ensaio individual (<span class="math inline">\(0 &lt; p &lt; 1\)</span>).</p>
+</section>
+<section id="resposta-9a-ii-y-representa-o-número-total-de-ensaios-até-a-ocorrência-do-r-ésimo-sucesso" class="level4">
+<h4 class="anchored" data-anchor-id="resposta-9a-ii-y-representa-o-número-total-de-ensaios-até-a-ocorrência-do-r-ésimo-sucesso">Resposta 9a ii: <span class="math inline">\(Y\)</span> representa o número total de ensaios até a ocorrência do <span class="math inline">\(r\)</span>-ésimo sucesso</h4>
+<p>Para obter <span class="math inline">\(r\)</span> sucessos, são necessários no mínimo <span class="math inline">\(r\)</span> ensaios, considerando que todos eles sucessos consecutivos:</p>
+<p><span class="math display">\[\mathcal{S}_Y = \{r, r + 1, r + 2, \dots\}\]</span></p>
+<p>Considerando esse Y, a Função de Probabilidade (<span class="math inline">\(P(Y = y)\)</span>), podemos pensar que o total de ensaios seja <span class="math inline">\(y\)</span>, logo o último ensaio precisa ser o <span class="math inline">\(r\)</span>-ésimo sucesso. Nesse cenário, antes dele tivemos <span class="math inline">\(y - 1\)</span> ensaios, nos quais ocorreram <span class="math inline">\(r - 1\)</span> sucessos e <span class="math inline">\(y - r\)</span> falhas:</p>
+<p><span class="math display">\[P(Y = y) = \binom{y - 1}{r - 1} p^r (1 - p)^{y - r}, \quad y = r, r + 1, r + 2, \dots\]</span></p>
+<p>onde:</p>
+<p><span class="math inline">\(r\)</span>: número prefixado de sucessos requeridos (<span class="math inline">\(r \in \mathbb{N}^*\)</span>).</p>
+<p><span class="math inline">\(p\)</span>: probabilidade de sucesso em cada ensaio individual (<span class="math inline">\(0 &lt; p &lt; 1\)</span>).Item (iii):</p>
+</section>
+<section id="resposta-9a-iii-y-representa-o-número-de-sucessos-observados-antes-da-ocorrência-da-r-ésima-falha" class="level4">
+<h4 class="anchored" data-anchor-id="resposta-9a-iii-y-representa-o-número-de-sucessos-observados-antes-da-ocorrência-da-r-ésima-falha">Resposta 9a iii: <span class="math inline">\(Y\)</span> representa o número de sucessos observados antes da ocorrência da <span class="math inline">\(r\)</span>-ésima falha</h4>
+<p>No último cenário, temos que podem ocorrer zero ou mais sucessos antes de atingir a <span class="math inline">\(r\)</span>-éisima falha:</p>
+<p><span class="math display">\[\mathcal{S}_Y = \{0, 1, 2, 3, \dots\}\]</span></p>
+<p>Aqui, para o cálculo da Função de Probabilidade (<span class="math inline">\(P(Y = y)\)</span>) é necessário levar em conta que o evento que encerra o experimento é a falha (<span class="math inline">\(1 - p\)</span>). Ao contrário do Item i, o último ensaio (<span class="math inline">\(y + r\)</span>) é a <span class="math inline">\(r\)</span>-ésima falha. Nos <span class="math inline">\(y + r - 1\)</span> ensaios anteriores, ocorreram <span class="math inline">\(r - 1\)</span> falhas e <span class="math inline">\(y\)</span> sucessos:</p>
+<p><span class="math display">\[P(Y = y) = \binom{y + r - 1}{r - 1} (1 - p)^r p^y = \binom{y + r - 1}{y} (1 - p)^r p^y, \quad y = 0, 1, 2, \dots\]</span></p>
+<p>onde:</p>
+<p><span class="math inline">\(r\)</span>: número prefixado de falhas requeridas;</p>
+<p><span class="math inline">\(p\)</span>: probabilidade de sucesso em cada ensaio (<span class="math inline">\(0 &lt; p &lt; 1\)</span>), portanto há uma probabilidade <span class="math inline">\(1 - p\)</span> de falha.</p>
+</section>
+</div>
+</section>
+<section id="respota-9b" class="level3">
+<h3 class="anchored" data-anchor-id="respota-9b">Respota 9b</h3>
+<div class="resposta">
+<ul>
+<li><p>Situação i: <span class="math inline">\(Y\)</span> representa o número de falhas observadas antes do <span class="math inline">\(r\)</span>-ésimo sucesso.</p>
+<p>Ocorrência de uma espécie de ave ameaçada (portanto rara) dentro de uma área específica</p></li>
+<li><p>Situação ii: <span class="math inline">\(Y\)</span> representa o número total de ensaios até a ocorrência do <span class="math inline">\(r\)</span>-ésimo sucesso</p>
+<p>Quantos amostrei até encontrar aquela espécie de ave em uma região</p></li>
+<li><p>Situação iii: <span class="math inline">\(Y\)</span> representa o número de sucessos observados antes da ocorrência da <span class="math inline">\(r\)</span>-ésima falha</p>
+<p>Quantos territórios não possuem determinada espécie de ave comum.</p></li>
+</ul>
+</div>
+</section>
+<section id="resposta-9c" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-9c">Resposta 9c</h3>
+<div class="resposta">
+<p>O número total de ensaios realizados (<span class="math inline">\(Y_2\)</span>) é composto pela soma dos sucessos obtidos com as falhas observadas:</p>
+<p><span class="math display">\[\text{Total de ensaios} = (\text{Número de falhas}) + (\text{Número de sucessos})\]</span></p>
+<p>Ainda desse contexto, o número de sucessos é igual a <span class="math inline">\(r\)</span>. Portanto, a relação entre as variáveis é:</p>
+<p><span class="math display">\[Y_2 = Y_1 + r  \quad  \text{ou} \quad Y_1 = Y_2 - r\]</span></p>
+</div>
+</section>
+<section id="resposta-9d" class="level3">
+<h3 class="anchored" data-anchor-id="resposta-9d">Resposta 9d</h3>
+<div class="resposta">
+<p>Quanndo se usa um software estatístico, é importante informar a parametrização, pois dessa maneira é possível entender a natureza da variável. Por vezes, ela pode assumir o valor de zero, por vezes não.</p>
+<p>Além disso, diferentes pacotes, linguagens ou softwares podem ter parametrização distintas, portanto pode ser que um pesquisador entenda que o valor de p é sucesso, mas na verdade para o software era sera o fracasso (1-p).</p>
+<p>Por fim, em conversa com a IA Gemini, ela discorreu sobre um ponto que eu não tinha conhecimento. No caso da utilização de GLM, a Binomial Negativa costuma ser parametrizada pela média e pelo parâmetro de dispesão <span class="math inline">\(\theta\)</span>. Nesse caso, fica inviável fazer modelagens ou calcular demais parâmetros sem definir qual é o Y.</p>
 </div>
 <div class="pergunta">
 <ol start="10" type="1">
