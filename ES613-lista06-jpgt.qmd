@@ -1,0 +1,588 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA <br> LISTA DE EXERCÍCIOS 06"
+author: "João Paulo Gusmão Teixeira (64316)"
+format:
+  html:
+    toc: true
+    code-overflow: wrap
+    embed-resources: true
+---
+
+```{=html}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+
+.resposta {
+  font-family: 'Architects Daughter', cursive;
+  font-size: 1.2rem;
+}
+</style>
+```
+
+```{r setup, include=FALSE}
+# Pacotes utilizados ao longo da lista (instalados fora do ambiente qmd)
+library(rstan)
+library(coda)
+library(knitr)
+
+# Formatação de números no texto (separador de milhar e vírgula decimal)
+fmt <- function(x, d = 2) format(round(x, d), big.mark = ".", decimal.mark = ",", scientific = FALSE, nsmall = d)
+
+rstan_options(auto_write = TRUE)
+
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center"
+)
+```
+
+## Resolução manuscrita
+
+A resolução manuscrita de todas as questões está no arquivo abaixo. Em seguida, estão as resoluções em R da questão 01, que fiz também no R para conferir as contas, e da questão 2.
+
+```{=html}
+<embed src="Lista06-jpgt.pdf" type="application/pdf" width="100%" height="800px" />
+```
+
+---
+
+::: {.pergunta}
+1. **Fator de Bayes no modelo Beta-Binomial**
+
+Uma linha de produção é monitorada quanto à proporção $\theta$ de itens defeituosos. Em uma amostra aleatória de 20 itens, 5 foram classificados como defeituosos. Deseja-se comparar duas especificações a priori para $\theta$.
+
+$$Y \mid \theta, M_1 \sim \text{Binomial}(20, \theta), \qquad \theta \mid M_1 \sim \text{Beta}(3, 10)$$
+$$Y \mid \theta, M_2 \sim \text{Binomial}(20, \theta), \qquad \theta \mid M_2 \sim \text{Beta}(10, 3)$$
+
+Considere o Fator de Bayes em favor de $M_1$:
+
+$$BF_{12} = \frac{p(y \mid M_1)}{p(y \mid M_2)}$$
+
+e a verossimilhança marginal: $p(y \mid M_k) = \int_0^1 p(y \mid \theta, M_k)\, p(\theta \mid M_k)\, d\theta$
+
+a. Derive analiticamente $p(y \mid M_1)$ e $p(y \mid M_2)$, utilizando a função Beta para resolver as integrais.
+
+b. Calcule $BF_{12}$ e interprete a evidência em favor de um dos modelos.
+
+c. Assumindo $p(M_1) = p(M_2) = 0,5$, calcule $p(M_1 \mid y)$ e $p(M_2 \mid y)$.
+
+d. Explique, em termos do problema, por que as duas distribuições a priori conduzem a evidências tão diferentes após a observação dos dados.
+
+*Dica: Resolva a integral acima transformando a função a ser integrada na função densidade de probabilidade da Beta. Utilize a função gamma do R para o cálculo de $\Gamma(a)$.*
+:::
+
+## Resposta 01
+
+### Resposta 01.a) Verossimilhanças marginais
+
+::: {.resposta}
+Com $n = 20$ e $y = 5$, a verossimilhança é a mesma nos dois modelos:
+
+$$p(y \mid \theta, M_k) = \binom{20}{5}\theta^{5}(1 - \theta)^{15}$$
+
+e a priori $\text{Beta}(a_k, b_k)$ é:
+
+$$p(\theta \mid M_k) = \frac{1}{B(a_k, b_k)}\,\theta^{a_k - 1}(1 - \theta)^{b_k - 1}, \qquad B(a, b) = \frac{\Gamma(a)\Gamma(b)}{\Gamma(a + b)}$$
+
+Substituindo na verossimilhança marginal:
+
+$$p(y \mid M_k) = \int_0^1 \binom{20}{5}\theta^{5}(1 - \theta)^{15} \cdot \frac{1}{B(a_k, b_k)}\,\theta^{a_k - 1}(1 - \theta)^{b_k - 1}\,d\theta = \frac{\binom{20}{5}}{B(a_k, b_k)} \int_0^1 \theta^{(a_k + 5) - 1}(1 - \theta)^{(b_k + 15) - 1}\,d\theta$$
+
+O integrando é o núcleo de uma $\text{Beta}(a_k + 5,\; b_k + 15)$. Multiplicando e dividindo por $B(a_k + 5, b_k + 15)$, a integral passa a ser a de uma f.d.p. Beta, que vale 1:
+
+$$p(y \mid M_k) = \frac{\binom{20}{5}\,B(a_k + 5,\; b_k + 15)}{B(a_k, b_k)} \underbrace{\int_0^1 \frac{\theta^{(a_k + 5) - 1}(1 - \theta)^{(b_k + 15) - 1}}{B(a_k + 5, b_k + 15)}\,d\theta}_{= \, 1} = \binom{20}{5}\frac{B(a_k + 5,\; b_k + 15)}{B(a_k, b_k)}$$
+
+**Modelo $M_1$:** $a_1 = 3$, $b_1 = 10$
+
+$$p(y \mid M_1) = \binom{20}{5}\frac{B(8, 25)}{B(3, 10)}$$
+
+**Modelo $M_2$:** $a_2 = 10$, $b_2 = 3$
+
+$$p(y \mid M_2) = \binom{20}{5}\frac{B(15, 18)}{B(10, 3)}$$
+
+**Cálculo à mão.** Como os argumentos são inteiros, $\Gamma(k) = (k - 1)!$:
+
+- $B(3, 10) = \frac{2!\,9!}{12!} = \frac{2}{10 \cdot 11 \cdot 12} = \frac{1}{660}$, e da mesma forma $B(10, 3) = \frac{9!\,2!}{12!} = \frac{1}{660}$;
+- $B(8, 25) = \frac{7!\,24!}{32!}$ e $B(15, 18) = \frac{14!\,17!}{32!}$;
+- $\binom{20}{5} = 15.504$.
+
+Logo,
+
+$$p(y \mid M_1) = 15.504 \times 660 \times \frac{7!\,24!}{32!} \approx 0,1216 \qquad p(y \mid M_2) = 15.504 \times 660 \times \frac{14!\,17!}{32!} \approx 0,001206$$
+:::
+
+```{r Resposta 1a}
+#| collapse: true
+#| comment: ""
+
+n1 <- 20
+y1 <- 5
+
+# Verossimilhança marginal Beta-Binomial, com B(a,b) = gamma(a)gamma(b)/gamma(a+b)
+B <- function(a, b) gamma(a) * gamma(b) / gamma(a + b)
+marginal <- function(a, b) choose(n1, y1) * B(a + y1, b + n1 - y1) / B(a, b)
+
+p_M1 <- marginal(3, 10)
+p_M2 <- marginal(10, 3)
+
+cat("p(y | M1) =", signif(p_M1, 6), "\n")
+cat("p(y | M2) =", signif(p_M2, 6), "\n")
+```
+
+### Resposta 01.b) Fator de Bayes
+
+::: {.resposta}
+Na razão, $\binom{20}{5}$ se cancela e, como $B(3, 10) = B(10, 3)$, as constantes das prioris também se cancelam:
+
+$$BF_{12} = \frac{p(y \mid M_1)}{p(y \mid M_2)} = \frac{B(8, 25)}{B(15, 18)} = \frac{7!\,24!/32!}{14!\,17!/32!} = \frac{7!\,24!}{14!\,17!}$$
+
+Simplificando $\frac{24!}{17!} = 18 \cdot 19 \cdots 24$ e $\frac{14!}{7!} = 8 \cdot 9 \cdots 14$:
+
+$$BF_{12} = \frac{18 \cdot 19 \cdot 20 \cdot 21 \cdot 22 \cdot 23 \cdot 24}{8 \cdot 9 \cdot 10 \cdot 11 \cdot 12 \cdot 13 \cdot 14} = \frac{1.744.364.160}{17.297.280} = \frac{1311}{13} \approx \mathbf{100,85}$$
+
+com $\log_{10}(BF_{12}) \approx 2,004$.
+
+**Interpretação:** os dados são cerca de 101 vezes mais prováveis sob $M_1$ do que sob $M_2$. Pela escala de interpretação do Fator de Bayes ($BF_{12} > 100$, ou $\log_{10} BF_{12} > 2$), a evidência a favor de $M_1$ é **muito forte**, embora esteja bem no limite entre as categorias "forte" e "muito forte".
+:::
+
+```{r Resposta 1b}
+#| collapse: true
+#| comment: ""
+
+BF12 <- p_M1 / p_M2
+cat("BF12 =", round(BF12, 4), "\n")
+cat("log10(BF12) =", round(log10(BF12), 4), "\n")
+cat("Conferência da forma simplificada:", prod(18:24) / prod(8:14), "=", 1311 / 13, "\n")
+```
+
+### Resposta 01.c) Probabilidades a posteriori dos modelos
+
+::: {.resposta}
+Com $p(M_1) = p(M_2) = 0,5$, as odds a priori valem 1, e as odds a posteriori são iguais ao próprio Fator de Bayes:
+
+$$p(M_1 \mid y) = \frac{p(y \mid M_1)\,p(M_1)}{p(y \mid M_1)\,p(M_1) + p(y \mid M_2)\,p(M_2)} = \frac{BF_{12}}{BF_{12} + 1} = \frac{1311/13}{1311/13 + 1} = \frac{1311}{1324} \approx \mathbf{0,9902}$$
+
+$$p(M_2 \mid y) = 1 - p(M_1 \mid y) = \frac{13}{1324} \approx \mathbf{0,0098}$$
+
+Depois de observar os dados, $M_1$ tem aproximadamente 99% de probabilidade a posteriori.
+:::
+
+```{r Resposta 1c}
+#| collapse: true
+#| comment: ""
+
+P_M1_y <- p_M1 * 0.5 / (p_M1 * 0.5 + p_M2 * 0.5)
+P_M2_y <- 1 - P_M1_y
+cat("p(M1 | y) =", round(P_M1_y, 4), "\n")
+cat("p(M2 | y) =", round(P_M2_y, 4), "\n")
+```
+
+### Resposta 01.d) Por que as evidências são tão diferentes
+
+```{r Resposta 1d}
+#| fig-width: 8
+#| fig-height: 4.5
+
+curve(dbeta(x, 3, 10), 0, 1, n = 500, lwd = 2, col = "royalblue3",
+      xlab = expression(theta), ylab = "Densidade", ylim = c(0, 5.5),
+      main = "Prioris e verossimilhança normalizada")
+curve(dbeta(x, 10, 3), add = TRUE, lwd = 2, col = "firebrick3")
+curve(dbeta(x, y1 + 1, n1 - y1 + 1), add = TRUE, lwd = 2, lty = 2, col = "gray30")
+abline(v = y1 / n1, lty = 3)
+legend("top", legend = c("Priori M1: Beta(3,10)", "Priori M2: Beta(10,3)",
+                         "Verossimilhança (normalizada)"),
+       col = c("royalblue3", "firebrick3", "gray30"), lty = c(1, 1, 2), lwd = 2, bty = "n")
+```
+
+::: {.resposta}
+A verossimilhança marginal é a **média da verossimilhança ponderada pela priori**. Por isso, ela mede o quanto a priori "apostou" nos valores de $\theta$ que os dados de fato favorecem.
+
+- A proporção observada de defeituosos é $5/20 = 0,25$, e a verossimilhança concentra-se em torno desse valor.
+- A priori de $M_1$, $\text{Beta}(3, 10)$, tem média $3/13 \approx 0,23$, ou seja, ela já esperava uma linha de produção com cerca de 23% de defeituosos. Ela coloca bastante massa onde a verossimilhança é alta.
+- A priori de $M_2$, $\text{Beta}(10, 3)$, tem média $10/13 \approx 0,77$, ou seja, ela esperava cerca de 77% de defeituosos. Ela coloca quase toda a massa em valores de $\theta$ nos quais observar apenas 5 defeituosos em 20 seria muito improvável.
+
+Como as duas prioris são igualmente concentradas (são espelhadas), a diferença não vem de uma ser mais "vaga" que a outra, mas da **localização**: $M_1$ previu bem os dados antes de observá-los, e $M_2$ previu mal. Assim, a média da verossimilhança sob $M_2$ é cerca de 100 vezes menor. No contexto do problema, os dados são compatíveis com uma linha que produz poucos defeituosos, e não com uma linha em que a maioria dos itens sai com defeito.
+:::
+
+::: {.pergunta}
+2. **Regressão linear Bayesiana: estimação, diagnóstico MCMC e comparação de estruturas a priori**
+
+Considere as variáveis:
+
+- Y: saldo devedor do cartão de crédito;
+- X₁: limite do cartão de crédito;
+- X₂: idade;
+- X₃: número de anos de estudo;
+- X₄: estado civil (1 = casado; 0 = solteiro);
+- X₅: gênero (1 = feminino; 0 = masculino);
+- X₆: horas livres anuais.
+
+| Y | X₁ | X₂ | X₃ | X₄ | X₅ | X₆ |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 520 | 1500 | 24 | 12 | 0 | 1 | 1200 |
+| 810 | 2200 | 31 | 16 | 1 | 0 | 980 |
+| 430 | 1200 | 27 | 14 | 0 | 1 | 1350 |
+| 1250 | 3000 | 42 | 18 | 1 | 0 | 760 |
+| 690 | 1800 | 35 | 15 | 1 | 1 | 1020 |
+| 980 | 2500 | 39 | 17 | 1 | 0 | 840 |
+| 350 | 1000 | 22 | 11 | 0 | 1 | 1500 |
+| 1430 | 3500 | 48 | 19 | 1 | 0 | 620 |
+| 760 | 2100 | 33 | 16 | 0 | 1 | 1100 |
+| 1120 | 2800 | 45 | 18 | 1 | 1 | 700 |
+
+Considere o modelo:
+
+$$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \beta_4 X_{4i} + \beta_5 X_{5i} + \beta_6 X_{6i} + \varepsilon_i$$
+
+$$\varepsilon_i \sim \text{Normal}(0, \sigma^2), \qquad \tau = 1/\sigma^2$$
+
+Compare as seguintes estruturas bayesianas. Considere a parametrização Gama(shape, rate).
+
+| Parâmetro | Estrutura 1 | Estrutura 2 |
+|:---:|:---:|:---:|
+| $\beta_0$ | Normal(100, 10²) | Normal(100, 10²) |
+| $\beta_j$, j=1,…,6 | Normal(0, 5²) | Normal(0, 5²) |
+| $\tau$ | Gama(20, 4) | Gama(0,01; 0,01) |
+
+A Estrutura 1 representa maior concentração a priori para a precisão residual; a Estrutura 2 é deliberadamente mais difusa. Ajuste os dois modelos usando JAGS, Stan ou qualquer outro software que você deseje.
+
+a. Utilize pelo menos 4 cadeias com valores iniciais distintos. Informe número de iterações, warm-up/burn-in e thin. Evite thinning rotineiro; justifique caso utilize thin > 1.
+
+b. Apresente os traceplots e os gráficos de autocorrelação dos principais parâmetros. Comente mistura e estabilidade das cadeias.
+
+c. Apresente R-hat, tamanho efetivo da amostra (ESS) e erro-padrão de Monte Carlo (MCSE). Interprete cada diagnóstico.
+
+d. Apresente média, mediana, desvio-padrão e intervalo de credibilidade de 95% para β₀,…,β₆ e σ².
+
+e. Quais coeficientes apresentam intervalo de credibilidade de 95% contendo zero? Interprete essa informação no contexto do problema.
+
+f. Compare média e mediana a posteriori e os gráficos de densidade. Há indícios de assimetria em algum parâmetro?
+
+g. Calcule o número efetivo de parâmetros pD e o DIC para cada estrutura. Qual estrutura é preferida pelo DIC? A diferença observada parece relevante?
+
+h. Discuta como a mudança na priori de τ afetou as estimativas, a incerteza posterior e a complexidade efetiva do modelo.
+:::
+
+## Resposta 02
+
+### Ajuste no Stan
+
+::: {.resposta}
+Usei o Stan (pacote `rstan`). Alguns cuidados com na parametrização dele:
+
+- A `normal(média, desvio-padrão)`. Assim, $\text{Normal}(100, 10^2)$ vira `normal(100, 10)` e $\text{Normal}(0, 5^2)$ vira `normal(0, 5)`.
+- O bloco `generated quantities` guarda o log da verossimilhança de cada observação, usado no cálculo do DIC (item g).
+:::
+
+```{r Resposta 2 dados}
+#| collapse: true
+#| comment: ""
+
+dados2 <- data.frame(
+  Y  = c(520, 810, 430, 1250, 690, 980, 350, 1430, 760, 1120),
+  X1 = c(1500, 2200, 1200, 3000, 1800, 2500, 1000, 3500, 2100, 2800),
+  X2 = c(24, 31, 27, 42, 35, 39, 22, 48, 33, 45),
+  X3 = c(12, 16, 14, 18, 15, 17, 11, 19, 16, 18),
+  X4 = c(0, 1, 0, 1, 1, 1, 0, 1, 0, 1),
+  X5 = c(1, 0, 1, 0, 1, 0, 1, 0, 1, 1),
+  X6 = c(1200, 980, 1350, 760, 1020, 840, 1500, 620, 1100, 700)
+)
+
+X2mat <- as.matrix(dados2[, paste0("X", 1:6)])
+y2 <- dados2$Y
+n2 <- nrow(dados2)
+
+modelo2_code <- "
+data {
+  int<lower=1> n;
+  int<lower=1> k;
+  matrix[n, k] X;
+  vector[n] y;
+  real<lower=0> a_tau;   // shape da priori de tau
+  real<lower=0> b_tau;   // rate da priori de tau
+}
+parameters {
+  real beta0;
+  vector[k] beta;
+  real<lower=0> tau;
+}
+transformed parameters {
+  real<lower=0> sigma2 = 1 / tau;
+}
+model {
+  // Prioris
+  beta0 ~ normal(100, 10);
+  beta ~ normal(0, 5);
+  tau ~ gamma(a_tau, b_tau);
+  // Verossimilhança
+  y ~ normal(beta0 + X * beta, sqrt(sigma2));
+}
+generated quantities {
+  vector[n] log_lik;
+  for (i in 1:n)
+    log_lik[i] = normal_lpdf(y[i] | beta0 + X[i] * beta, sqrt(sigma2));
+}
+"
+
+modelo2 <- stan_model(model_code = modelo2_code)
+
+# Configurações das cadeias (iguais para as duas estruturas)
+n_cadeias <- 4
+n_iter <- 6000    # iterações totais por cadeia
+n_warmup <- 2000  # warm-up (burn-in) por cadeia
+n_thin <- 1       # sem thinning
+
+# Valores iniciais distintos e dispersos para cada cadeia
+inits2 <- list(
+  list(beta0 = 70,  beta = rep(-2, 6),               tau = 0.0005),
+  list(beta0 = 130, beta = rep(2, 6),                tau = 0.05),
+  list(beta0 = 100, beta = c(1, -1, 1, -1, 1, -1),   tau = 0.005),
+  list(beta0 = 85,  beta = rep(0, 6),                tau = 1)
+)
+
+ajustar2 <- function(a_tau, b_tau) {
+  sampling(
+    object = modelo2,
+    data = list(n = n2, k = 6, X = X2mat, y = y2, a_tau = a_tau, b_tau = b_tau),
+    chains = n_cadeias, iter = n_iter, warmup = n_warmup, thin = n_thin,
+    init = inits2, seed = 1234, refresh = 0
+  )
+}
+
+fit_E1 <- ajustar2(a_tau = 20, b_tau = 4)        # Estrutura 1
+fit_E2 <- ajustar2(a_tau = 0.01, b_tau = 0.01)   # Estrutura 2
+
+pars2 <- c("beta0", paste0("beta[", 1:6, "]"), "sigma2")
+```
+
+### Resposta 02.a) Cadeias, iterações, warm-up e thin
+
+::: {.resposta}
+Para as duas estruturas usei:
+
+- **Cadeias:** `r n_cadeias`, com valores iniciais distintos (tabela abaixo);
+- **Iterações totais:** `r fmt(n_iter, 0)` por cadeia;
+- **Warm-up (burn-in):** `r fmt(n_warmup, 0)` por cadeia. No Stan, essa fase também adapta o tamanho do passo e a matriz de massa do NUTS;
+- **Thin:** `r n_thin`, ou seja, sem thinning;
+- **Amostras finais:** $(`r fmt(n_iter, 0)` - `r fmt(n_warmup, 0)`) \times `r n_cadeias` =$ `r fmt((n_iter - n_warmup) * n_cadeias, 0)` valores por parâmetro.
+
+| Cadeia | $\beta_0$ | $\beta_1, \dots, \beta_6$ | $\tau$ |
+|:---:|:---:|:---:|:---:|
+| 1 | 70 | todos $-2$ | 0,0005 |
+| 2 | 130 | todos $2$ | 0,05 |
+| 3 | 100 | $1, -1, 1, -1, 1, -1$ | 0,005 |
+| 4 | 85 | todos $0$ | 1 |
+
+Escolhi os valores iniciais escolhidos em lados opostos da região plausível, com $\tau$ variando de 0,0005 a 1. Nesse caso, se as cadeias chegarem à mesma distribuição, há evidência de convergência.
+
+Não usei thinning: a autocorrelação cai rapidamente (item b) e o ESS é alto (item c), então não vi necessidade de de aumentar.
+:::
+
+### Resposta 02.b) Traceplots e autocorrelação
+
+```{r Resposta 2b trace}
+#| fig-width: 11
+#| fig-height: 6
+
+stan_trace(fit_E1, pars = pars2, ncol = 4) + ggplot2::ggtitle("Estrutura 1 - tau ~ Gama(20, 4)")
+stan_trace(fit_E2, pars = pars2, ncol = 4) + ggplot2::ggtitle("Estrutura 2 - tau ~ Gama(0,01; 0,01)")
+```
+
+```{r Resposta 2b acf}
+#| fig-width: 11
+#| fig-height: 6
+
+stan_ac(fit_E1, pars = pars2, lags = 20, ncol = 4) + ggplot2::ggtitle("Autocorrelação - Estrutura 1")
+stan_ac(fit_E2, pars = pars2, lags = 20, ncol = 4) + ggplot2::ggtitle("Autocorrelação - Estrutura 2")
+```
+
+::: {.resposta}
+Nas duas estruturas:
+
+- **Estabilidade:** as quatro cadeias oscilam em torno de um mesmo valor central, sem tendência de subida ou descida ao longo das iterações. O warm-up foi suficiente para que saíssem dos valores iniciais.
+- **Mistura:** as cadeias se sobrepõem completamente, formando uma faixa densa e homogênea, sem trechos em que uma cadeia fica presa ou explora uma região diferente das outras.
+- **Autocorrelação:** cai para valores próximos de zero em poucos lags, ou seja, as amostras sucessivas são praticamente independentes.
+
+A única diferença visível é a escala de $\sigma^2$. Na Estrutura 2, o traceplot de $\sigma^2$ tem picos ocasionais para valores altos, um reflexo da cauda direita longa da posteriori (item f).
+:::
+
+### Resposta 02.c) R-hat, ESS e MCSE
+
+```{r Resposta 2c}
+#| collapse: true
+#| comment: ""
+#| message: true
+
+diag2 <- function(fit) {
+  s <- summary(fit, pars = pars2)$summary
+  data.frame(
+    Parametro = rownames(s),
+    Rhat = round(s[, "Rhat"], 4),
+    ESS = round(s[, "n_eff"]),
+    MCSE = signif(s[, "se_mean"], 3),
+    MCSE_sobre_DP = round(s[, "se_mean"] / s[, "sd"], 4),
+    row.names = NULL
+  )
+}
+
+kable(diag2(fit_E1), caption = "Estrutura 1 - tau ~ Gama(20, 4)")
+kable(diag2(fit_E2), caption = "Estrutura 2 - tau ~ Gama(0,01; 0,01)")
+
+# Diagnósticos próprios do HMC/NUTS
+check_hmc_diagnostics(fit_E1)
+check_hmc_diagnostics(fit_E2)
+```
+
+::: {.resposta}
+- **R-hat (Gelman-Rubin):** compara a variabilidade entre as cadeias com a variabilidade dentro delas. Se as cadeias convergiram para a mesma distribuição, as duas variabilidades são iguais e $\hat{R} \approx 1$. O critério usual é $\hat{R} < 1,01$. Todos os parâmetros das duas estruturas têm $\hat{R} \approx 1,00$, o que indica convergência.
+- **ESS (tamanho efetivo da amostra):** número de amostras independentes que carregariam a mesma informação que as `r fmt((n_iter - n_warmup) * n_cadeias, 0)` amostras autocorrelacionadas. Quanto mais próximo do total, menor a autocorrelação. Todos os ESS foram altos, o que confirma a boa mistura.
+- **MCSE (erro-padrão de Monte Carlo):** é o erro da estimativa da média a posteriori por um número finito de amostras, $\text{MCSE} \approx \text{DP}/\sqrt{\text{ESS}}$. Ele mede a precisão numérica da simulação. Em todos os parâmetros, o MCSE é menor que 2% do desvio-padrão a posteriori. Ou seja, aumentar o número de iterações não mudaria as conclusões.
+
+Os diagnósticos do NUTS (divergências, profundidade máxima da árvore e E-BFMI) também não indicaram problemas.
+:::
+
+### Resposta 02.d) Resumo a posteriori
+
+```{r Resposta 2d}
+#| collapse: true
+#| comment: ""
+
+resumo2 <- function(fit) {
+  m <- as.matrix(fit, pars = pars2)
+  data.frame(
+    Parametro = colnames(m),
+    Media = apply(m, 2, mean),
+    Mediana = apply(m, 2, median),
+    DP = apply(m, 2, sd),
+    LI_95 = apply(m, 2, quantile, 0.025),
+    LS_95 = apply(m, 2, quantile, 0.975),
+    row.names = NULL
+  )
+}
+
+res_E1 <- resumo2(fit_E1)
+res_E2 <- resumo2(fit_E2)
+
+kable(res_E1, digits = 4, caption = "Estrutura 1 - tau ~ Gama(20, 4)")
+kable(res_E2, digits = 4, caption = "Estrutura 2 - tau ~ Gama(0,01; 0,01)")
+```
+
+::: {.resposta}
+O intervalo de credibilidade de 95% foi obtido pelos quantis 2,5% e 97,5% das amostras a posteriori.
+:::
+
+### Resposta 02.e) Intervalos que contêm o zero
+
+```{r Resposta 2e}
+#| collapse: true
+#| comment: ""
+
+contem_zero <- function(res) res$Parametro[res$LI_95 < 0 & res$LS_95 > 0]
+cat("Estrutura 1 - IC 95% contém zero:", contem_zero(res_E1), "\n")
+cat("Estrutura 2 - IC 95% contém zero:", contem_zero(res_E2), "\n")
+```
+
+::: {.resposta}
+- **Nas duas estruturas**, os intervalos de $\beta_4$ (estado civil) e $\beta_5$ (gênero) contêm o zero. Assim, mantidas as demais variáveis constantes, não há evidência de que ser casado ou ser do gênero feminino altere o saldo devedor. Além disso, o DP a posteriori de $\beta_4$ e $\beta_5$ ficou perto de 5, praticamente igual ao da priori $\text{Normal}(0, 5^2)$. Os dados quase não trouxeram informação sobre esses efeitos. (Na Estrutura 1, a média de $\beta_5$ se deslocou para cerca de `r fmt(res_E1$Media[6])`, mas, com DP de quase 5, o intervalo continua amplo e contendo o zero.)
+- **Só na Estrutura 2**, os intervalos de $\beta_2$ (idade) e $\beta_3$ (anos de estudo) também contêm o zero. Na Estrutura 1, eles ficaram inteiramente positivos ($\beta_2$) e negativos ($\beta_3$). Essa conclusão depende, portanto, da priori de $\tau$.
+- **Em nenhuma estrutura** os intervalos de $\beta_1$ (limite do cartão) e $\beta_6$ (horas livres) contêm o zero. Para cada R\$ 1 a mais de limite, o saldo devedor esperado aumenta cerca de R\$ `r fmt(res_E1$Media[2], 2)`. Para cada hora livre anual a mais, o saldo esperado diminui cerca de R\$ `r fmt(abs(res_E1$Media[7]), 2)` (Estrutura 1) a R\$ `r fmt(abs(res_E2$Media[7]), 2)` (Estrutura 2). Ambos com as demais variáveis fixas.
+- O intervalo de $\beta_0$ não contém o zero, mas ele é o intercepto e sua posteriori praticamente repete a priori $\text{Normal}(100, 10^2)$.
+
+Uma coisa a se reparar é a correlação entre variáveis (por exemplo, a correlação entre limite e horas livres é `r fmt(cor(dados2$X1, dados2$X6), 2)`), o que dificulta separar o efeito individual de cada uma.
+:::
+
+### Resposta 02.f) Média × mediana e densidades
+
+```{r Resposta 2f}
+#| fig-width: 11
+#| fig-height: 6
+
+stan_dens(fit_E1, pars = pars2, ncol = 4, separate_chains = FALSE) + ggplot2::ggtitle("Densidades a posteriori - Estrutura 1")
+stan_dens(fit_E2, pars = pars2, ncol = 4, separate_chains = FALSE) + ggplot2::ggtitle("Densidades a posteriori - Estrutura 2")
+```
+
+```{r Resposta 2f tabela}
+#| collapse: true
+#| comment: ""
+
+kable(data.frame(
+  Parametro = res_E1$Parametro,
+  `Media - Mediana (E1)` = res_E1$Media - res_E1$Mediana,
+  `Media - Mediana (E2)` = res_E2$Media - res_E2$Mediana,
+  check.names = FALSE
+), digits = 4)
+```
+
+::: {.resposta}
+- Para $\beta_0, \dots, \beta_6$, a média e a mediana são praticamente iguais e as densidades são simétricas, com formato de sino. Não há indício de assimetria nos coeficientes.
+- Para $\sigma^2$, há assimetria à direita, como esperado para uma variância. Ela é leve na Estrutura 1 (média `r fmt(res_E1$Media[8])` contra mediana `r fmt(res_E1$Mediana[8])`), mas muito acentuada na Estrutura 2 (média `r fmt(res_E2$Media[8])` contra mediana `r fmt(res_E2$Mediana[8])`), em que a densidade tem uma cauda longa à direita. Nesse caso, a mediana é uma métrica de resumo pontual mais representativo do que a média.
+:::
+
+### Resposta 02.g) pD e DIC
+
+::: {.resposta}
+Seguindo as definições do material, com a deviance $D(\theta) = -2 \log p(y \mid \theta)$:
+
+$$\bar{D} = \frac{1}{N}\sum_{i=1}^N D(\theta^{(i)}), \qquad D(\bar{\theta}) = -2\log p(y \mid \bar{\theta}), \qquad p_D = \bar{D} - D(\bar{\theta}), \qquad DIC = \bar{D} + p_D$$
+
+em que $\bar{\theta}$ é a média a posteriori de $(\beta_0, \dots, \beta_6, \tau)$, na mesma parametrização em $\tau$ usada no modelo.
+:::
+
+```{r Resposta 2g}
+#| collapse: true
+#| comment: ""
+
+dic2 <- function(fit) {
+  e <- rstan::extract(fit)
+  D <- -2 * rowSums(e$log_lik)                      # deviance em cada iteração
+  D_bar <- mean(D)
+  mu_bar <- mean(e$beta0) + X2mat %*% colMeans(e$beta)
+  D_hat <- -2 * sum(dnorm(y2, mu_bar, sd = 1 / sqrt(mean(e$tau)), log = TRUE))
+  pD <- D_bar - D_hat
+  c(D_bar = D_bar, D_hat = D_hat, pD = pD, DIC = D_bar + pD)
+}
+
+tab_dic <- rbind(`Estrutura 1` = dic2(fit_E1), `Estrutura 2` = dic2(fit_E2))
+kable(tab_dic, digits = 3)
+
+dif_dic <- tab_dic["Estrutura 1", "DIC"] - tab_dic["Estrutura 2", "DIC"]
+```
+
+::: {.resposta}
+- **Estrutura 1:** $p_D =$ `r fmt(tab_dic[1, "pD"], 3)` e $DIC =$ `r fmt(tab_dic[1, "DIC"], 3)`.
+- **Estrutura 2:** $p_D =$ `r fmt(tab_dic[2, "pD"], 3)` e $DIC =$ `r fmt(tab_dic[2, "DIC"], 3)`.
+
+Quanto menor o DIC, melhor o compromisso entre ajuste e complexidade. Por isso, a Estrutura 2 é a preferida. A diferença é de `r fmt(dif_dic, 1)` pontos, o que é relevante.
+
+Nas duas estruturas, $p_D$ ficou bem abaixo dos 8 parâmetros nominais ($\beta_0, \dots, \beta_6$ e $\tau$).
+:::
+
+### Resposta 02.h) Efeito da priori de $\tau$
+
+::: {.resposta}
+**Por que a priori de $\tau$ pesa tanto**. Na regressão normal, a condicional completa de $\tau$ é conjugada:
+
+$$\tau \mid \boldsymbol{\beta}, y \sim \text{Gama}\left(a + \frac{n}{2},\; b + \frac{SQR(\boldsymbol\beta)}{2}\right), \qquad SQR(\boldsymbol\beta) = \sum_{i=1}^n (y_i - \mathbf{x}_i'\boldsymbol\beta)^2$$
+
+Com $n = 10$, os dados contribuem com apenas $n/2 = 5$ na forma:
+
+- **Estrutura 1**, $\text{Gama}(20, 4)$: shape a posteriori $= 20 + 5 = 25$. A priori pesa 4 vezes mais que os dados. Além disso, ela tem média $E(\tau) = 20/4 = 5$, isto é, espera $\sigma^2 \approx 0,2$, um valor absurdo para saldos devedores na casa das centenas de reais. Há um "conflito" entre priori e dados, e a priori puxa $\sigma^2$ para baixo.
+- **Estrutura 2**, $\text{Gama}(0,01; 0,01)$: shape a posteriori $= 0,01 + 5 = 5,01$. A priori é praticamente irrelevante e $\sigma^2$ é determinado pelos resíduos.
+
+**Efeitos observados:**
+
+1. **Na variância residual:** $\sigma^2$ a posteriori foi cerca de `r fmt(res_E1$Mediana[8], 0)` (mediana) na Estrutura 1 e `r fmt(res_E2$Mediana[8], 0)` na Estrutura 2. Para comparação, o estimador de mínimos quadrados é `r fmt(summary(lm(Y ~ ., data = dados2))$sigma^2, 0)`. A Estrutura 1 subestima a variância residual por imposição da priori, e com incerteza artificialmente pequena (DP `r fmt(res_E1$DP[8])` contra `r fmt(res_E2$DP[8])`).
+
+2. **Nos coeficientes:** com $\sigma^2$ pequeno, a verossimilhança fica mais "precisa" em relação à priori $\text{Normal}(0, 5^2)$ dos $\beta_j$. Os dados passam a dominar e os coeficientes se afastam de zero, com intervalos mais estreitos. Foi o que aconteceu com $\beta_2$ e $\beta_3$, que tiveram intervalos excluindo o zero na Estrutura 1. Na Estrutura 2, com $\sigma^2$ maior, a verossimilhança é mais achatada e a priori encolhe esses coeficientes em direção a zero, com intervalos mais largos que passam a conter o zero. Ou seja, a significância de idade e anos de estudo é consequência da priori de $\tau$, e não uma conclusão robusta dos dados.
+
+3. **Na complexidade efetiva:** $p_D$ mudou (`r fmt(tab_dic[1, "pD"], 2)` contra `r fmt(tab_dic[2, "pD"], 2)`), pois a forma como as prioris e a verossimilhança dividem o "trabalho" de determinar os parâmetros mudou. Mesmo assim, as duas estruturas usam bem menos que os 8 parâmetros nominais. A grande diferença no DIC vem do ajuste ($\bar{D}$), pois, ao forçar uma variância residual pequena, a Estrutura 1 torna os resíduos observados muito improváveis.
+
+Em resumo, uma priori informativa só é vantajosa quando a informação que ela carrega é coerente com os dados. Aqui, a Gama(20, 4) carrega uma informação errada sobre a escala do erro, e isso distorce tanto a variância quanto os coeficientes. A priori difusa deixa os dados determinarem $\sigma^2$ e é preferida pelo DIC.
+:::

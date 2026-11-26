@@ -1,0 +1,502 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA <br> LISTA DE EXERCÍCIOS 03 - QUESTÃO 05"
+author: "João Paulo Gusmão Teixeira (64316)"
+format:
+    html:
+        code-overflow: wrap
+
+embed-resources: true
+---
+
+```{=html}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+
+.resposta {
+  font-family: 'Architects Daughter', cursive;
+  font-size: 1.2rem;
+}
+
+.diagcell {
+  background: linear-gradient(to top right, transparent calc(50% - 1px), #dee2e6 calc(50% - 1px), #dee2e6 calc(50% + 1px), transparent calc(50% + 1px));
+  position: relative;
+  min-width: 100px;
+  height: 50px;
+}
+.diag-bottom {
+  position: absolute;
+  bottom: 2px;
+  left: 5px;
+}
+.diag-top {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+}
+
+</style>
+```
+
+::: {.resposta}
+Preferi fazer a questão 05 da lista de exercício 03 como documento Quarto (qmd).
+
+Segue, então, a pergunta:
+:::
+
+::: {.pergunta}
+
+5. Considere a variável aleatória definida na Lista I e responda às questões a seguir.
+
+A(s) distribuição(ões) a priori do(s) parâmetro(s) de interesse:
+
+i. Defina a(s) distribuição(ões) a priori adotada(s) para o(s) parâmetro(s) de interesse. Justifique a escolha da(s) distribuição(ões), identifique seus hiperparâmetros e descreva o procedimento utilizado para defini-los. Apresente o gráfico da(s) distribuição(ões) a priori.
+
+ii. Obtenha analiticamente a distribuição a posteriori do(s) parâmetro(s) de interesse e apresente seu gráfico, quando possível. Caso a distribuição a posteriori seja conjunta, obtenha também as distribuições marginais a posteriori de cada parâmetro e apresente seus respectivos gráficos, quando possível.
+
+iii. Discuta o aprendizado bayesiano proporcionado pela análise, comparando as informações a priori e a posteriori. Apresente medidas, gráficos ou outras evidências utilizadas para fundamentar sua conclusão. 
+
+iv. a. Proponha uma estrutura a priori hierárquica para o(s) parâmetro(s) de interesse. A estrutura deve conter, no mínimo, um nível hierárquico, por exemplo:
+
+$$\theta | \eta \approx D_1(\theta | \eta)$$
+
+e
+
+$$\eta \approx D_2(\eta_0),$$
+
+em que $\eta$ representa um ou mais hiperparâmetros.
+
+Justifique:
+
+- a escolha da distribuição dos hiperparâmetros;
+
+-  o significado dos hiperparâmetros no contexto do problema;
+
+Apresente graficamente a distribuição a priori condicional para diferentes valores dos hiperparâmetros.
+
+b. Distribuição a posteriori
+
+Obtenha a distribuição a posteriori conjunta
+
+$$p(\theta, \eta ∣ y)$$
+
+:::
+
+::: {.resposta}
+
+Primeiramente, abaixo trago uma recaptulação da escolha que fiz na lista 01.
+
+:::
+
+::: {.callout-note}
+### Contexto da Pesquisa (Exercício 15 da Lista I)
+
+* **Variável Aleatória ($Y_i$):** Número de locos marcadores do tipo SNP em homozigose num painel de $m = 50$ marcadores bialélicos independentes avaliados no $i$-ésimo indivíduo de uma população sob melhoramento.
+* **Modelo dos Dados:** $Y_i \mid p \overset{\text{i.i.d.}}{\sim} \text{Binomial}(m = 50, \, p)$ para $i = 1, \dots, n$.
+* **Parâmetro de Interesse:** $p \in (0, 1)$, que representa a probabilidade de homozigose por loco genômico.
+* **Dados Simulados (Lista I):** Amostra de $n = 1000$ indivíduos, totalizando $nm = 50\,000$ ensaios, com $\sum_{i=1}^n y_i = 30\,046$ sucessos observados ($\hat{p} \approx 0{,}6009$).
+:::
+
+## Resposta 5.i. Distribuição a Priori do Parâmetro de Interesse
+
+::: {.resposta}
+
+### Definição e Justificativa da Priori
+Como o parâmetro $p$ representa uma probabilidade restrita ao intervalo contínuo ($0 < p < 1$) irei adotar a Beta, que é conjugada da Binomial.
+
+$$p \sim \text{Beta}(a, b) \text{}$$
+
+cuja função densidade de probabilidade é dada por:
+$$p(p) = \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} p^{a - 1} (1 - p)^{b - 1}, \quad 0 < p < 1 \text{}$$
+
+Preferi adotar a Beta primeiramente por ser conjugada da binomial, o que pode facilitar os cálculos. Ademais, a Beta também varia de 0 a 1, preservando o espaço paramétrico. 
+
+### Definição dos Hiperparâmetros
+Para não ficar tão subjetivo, pedi ao Gemini que fizesse uma história a qual eu iria me basear, adotei o seguinte prompt:
+
+::: {.callout-note}
+### Prompt Gemini
+Atue como um especialista em genética quantitativa e estatística bayesiana. 
+
+Estou trabalhando com uma verossimilhança Binomial $Y_i ~ \text{Binomial}(m = 50, p)$, em que $Y_i$ é o número de marcadores SNP em homozigose em um painel de 50 marcadores bialélicos por indivíduo, e $p$ é a probabilidade de homozigose por loco. 
+
+Para a distribuição a priori conjugada $p ~ \text{Beta}(a, b)$, preciso definir os hiperparâmetros 'a' e 'b' de forma fundamentada e biologicamente plausível para linhagens sob melhoramento vegetal com endogamia bem presente. 
+
+Crie uma breve história para eu me embasar na definição dos hiperparâmetros.
+
+:::
+
+E abaixo tem o resultado:
+
+::: {.callout-tip}
+### Resultado prompt
+Em linhagens sob melhoramento com histórico prévio de seleção e parentesco, espera-se uma probabilidade média de homozigose em torno de $50\%$ a $60\%$. Suponha que, com base em estudos prévios na cultura, o melhorista tenha uma expectativa inicial de homozigose média de $E(p) = 0{,}55$, admitindo moderada incerteza com um tamanho amostral prévio equivalente a $a + b = 20$ locos avaliados historicamente. "
+:::
+
+Dado o contexto e pelas propriedades da distribuição Beta:
+$$E(p) = \frac{a}{a + b} = 0.55 \implies a = 0.55 \times 20 = 11$$
+$$b = 20 - a = 20 - 11 = 9$$
+
+Portanto, os hiperparâmetros fixados são:
+
+* **$a = 11$** - número prévio de homozigotos esperados
+
+* **$b = 9$** - número prévio de heterozigotos esperados
+
+* Distribuição adotada: **$p \sim \text{Beta}(11, 9)$**
+
+
+
+Abaixo, um chunck em R no qual armazenarei os dados dos hiperparâmetros para plotar o gráfico requisitado.
+
+```{r}
+#| label: fig-priori
+#| fig-cap: "Função densidade de probabilidade a priori Beta(11, 9) para a taxa de homozigose p."
+#| collapse: true
+
+# Hiperparâmetros da priori
+a_priori <- 11
+b_priori <- 9
+
+p_grid <- seq(0.01, 0.99, length.out = 1000)
+dens_priori <- dbeta(p_grid, shape1 = a_priori, shape2 = b_priori)
+
+plot(p_grid, dens_priori, type = "l", lwd = 2.5, col = "royalblue3",
+     main = "Distribuição a Priori: Beta(11, 9)",
+     xlab = expression(p), ylab = "Densidade a priori", las = 1)
+abline(v = a_priori / (a_priori + b_priori), lty = 2, col = "gray40")
+legend("topleft", legend = c("Priori Beta(11, 9)", "Média a priori (0.55)"),
+       col = c("royalblue3", "gray40"), lty = c(1, 2), lwd = c(2.5, 1), bty = "n")
+grid()
+```
+
+:::
+
+## Resposta 5.ii. Obtenção Analítica da Distribuição a Posteriori
+
+::: {.resposta}
+A simulação da lista 01 foi feita com  $n = 1000$ indivíduos observados e $m = 50$ locos marcadores. A função de verossimilhança dos dados é:
+
+$$L(p \mid \mathbf{y}) = \left[ \prod_{i=1}^n \binom{m}{y_i} \right] p^{\sum_{i=1}^n y_i} (1 - p)^{nm - \sum_{i=1}^n y_i}$$
+
+Pegando só o núcleo, temos:
+$$L(p \mid \mathbf{y}) \propto p^{\sum_{i=1}^n y_i} (1 - p)^{nm - \sum_{i=1}^n y_i}$$
+
+Combinando o núcleo da verossimilhança com o núcleo da distribuição a priori $p(p) \propto p^{a - 1}(1 - p)^{b - 1}$ tal qual fizemos nos exercícios, chegamos a:
+
+$$p(p \mid \mathbf{y}) \propto L(p \mid \mathbf{y}) \times p(p)$$
+
+$$p(p \mid \mathbf{y}) \propto \left[ p^{\sum_{i=1}^n y_i} (1 - p)^{nm - \sum_{i=1}^n y_i} \right] \times \left[ p^{a - 1} (1 - p)^{b - 1} \right]$$
+
+$$p(p \mid \mathbf{y}) \propto p^{\left( \sum_{i=1}^n y_i + a \right) - 1} (1 - p)^{\left( nm - \sum_{i=1}^n y_i + b \right) - 1}$$
+
+Nesse ponto dá para perceberaos hiperparâmetros da distribuição Beta, com:
+
+- $a^* = \sum_{i=1}^n y_i + a$
+
+- $b^* = nm - \sum_{i=1}^n y_i + b$, logo:
+
+- $p \mid \mathbf{y} \sim \text{Beta}(a^*, \, b^*)$
+
+Aplicando aos dados simulados:
+
+- $n = 1000$, $m = 50 \implies nm = 50,000$ "amostras" totais
+
+- $\sum_{i=1}^n y_i = 30\,046$ sucessos observados
+
+- $a = 11$, $b = 9$
+
+$$a^* = 30,046 + 11 = \mathbf{30,057}$$
+
+$$b^* = (50,000 - 30,046) + 9 = 19,954 + 9 = \mathbf{19,963}$$
+
+Logo, a distribuição a posteriori é:
+   
+$$p \mid y \sim \text{Beta}(30,057 ;  19,963)$$
+
+
+Abaixo o chunck com o código para a geração do gráfico:
+:::
+
+``` {r}
+
+#| label: fig-posteriori
+#| fig-cap: "Distribuição a posteriori Beta(30057, 19963) para a taxa de homozigose p."
+#| collapse: true
+
+a_post <- 30057
+b_post <- 19963
+
+p_grid_zoom <- seq(0.585, 0.615, length.out = 1000)
+dens_post <- dbeta(p_grid_zoom, shape1 = a_post, shape2 = b_post)
+
+plot(p_grid_zoom, dens_post, type = "l", lwd = 2.5, col = "firebrick3",
+     main = "Distribuição a Posteriori: Beta(30057, 19963)",
+     xlab = expression(p), ylab = "Densidade a posteriori", las = 1)
+abline(v = a_post / (a_post + b_post), lty = 2, col = "black")
+legend("topleft", legend = c("Posteriori Beta(30057, 19963)", "Média a posteriori (0.6009)"),
+       col = c("firebrick3", "black"), lty = c(1, 2), lwd = c(2.5, 1), bty = "n")
+grid()
+
+```
+
+## Resposta 5.iii. Discussão Aprendizado Bayesiano
+
+::: {.resposta}
+O aprendizado bayesiano consiste na atualização da incerteza com base nas novas evidências trazidas pela função de verossimilhança, ou seja, pelos dados:
+
+$$p(p) \xrightarrow{\text{dados } \mathbf{y}} p(p \mid \mathbf{y}) \text{[cite: 4]}$$
+
+1. Comparação entre o priori e posteriori
+
+
+- Média a priori: $E_{\text{priori}}(p) = \frac{a}{a + b} = \frac{11}{20} = \mathbf{0.5500}$
+
+-  Variância a priori: $\text{Var}_{\text{priori}}(p) = \frac{a b}{(a + b)^2 (a + b + 1)} = \frac{11 \times 9}{(20)^2 (21)} = \frac{99}{8400} \approx \mathbf{0.011786} \implies \text{DP} \approx \mathbf{0.1086}$
+
+- Média a posteriori: $E_{\text{post}}(p) = \frac{a^*}{a^* + b^*} = \frac{30,057}{50,020} \approx \mathbf{0.6008996} \approx \mathbf{0.6009}$
+
+- Variância a posteriori: $\text{Var}_{\text{post}}(p) = \frac{a^* b^*}{(a^* + b^*)^2 (a^* + b^* + 1)} = \frac{30,057 \times 19,963}{(50,020)^2 (50,021)} \approx \mathbf{4.796 \times 10^{-6}} \implies \text{DP} \approx \mathbf{0.00219}$
+
+2. Análise do Aprendizado Bayesiano
+
+O conjunto de dados forneceu bastante informação, tanto que a variância a posteriori reduziu mais de $2.000$ vezes em relação à variância inicial ($\text{DP}$ caiu de $\approx 0{,}1086$ para $\approx 0{,}00219$).
+
+Nesse sentido, a função de verossimilhança teve um peso maior na análise, o que também pode ser observado pela média.
+
+A média a posteriori ($0.6009$) é uma média ponderada entre a média a priori ($0.55$) e a estimativa de maxima verossimilhança dos dados ($\hat{p} = 0.60092$):
+
+   $$E(p \mid \mathbf{y}) = \left(\frac{a + b}{a + b + nm}\right) E_{\text{priori}}(p) + \left(\frac{nm}{a + b + nm}\right) \hat{p} = \left(\frac{20}{50\,020}\right) 0{,}55 + \left(\frac{50\,000}{50\,020}\right) 0{,}60092$$
+
+
+Como $[nm = 50,000] \; \text{e} \; [a+b = 20]$, o peso dos dados é tem está em uma ordem muito maior que a priori, "puxando" a distribuição a posteriori para a função de máxima verossimilhança.
+
+Abaixo, fiz um gráfico com as linhas da priori e posteriori, mostrando essa "tração" da posteriori para a informação que os dados estão fornecendo
+
+
+
+``` {r}
+#| label: fig-aprendizado
+#| fig-cap: "Curvas de densidade a Priori e a Posteriori, mostrando o Aprendizado Bayesiano."
+#| collapse: true
+
+p_total <- seq(0.2, 0.9, length.out = 2000)
+d_priori_full <- dbeta(p_total, shape1 = a_priori, shape2 = b_priori)
+d_post_full   <- dbeta(p_total, shape1 = a_post, shape2 = b_post)
+
+plot(p_total, d_priori_full, type = "l", lwd = 2, col = "royalblue3",
+     main = "Aprendizado Bayesiano: Priori vs. Posteriori",
+     xlab = expression(p), ylab = "Densidade", ylim = c(0, max(dens_post)), las = 1)
+lines(p_total, d_post_full, lwd = 2.5, col = "firebrick3")
+legend("topleft", legend = c("Priori Beta(11, 9) ", "Posteriori Beta(30057, 19963) "),
+       col = c("royalblue3", "firebrick3"), lwd = c(2, 2.5), bty = "n")
+grid()
+
+```
+
+Como é evidenciado, a curva se concentrou nos valores próximos ao que se teve pela função de máxima verossimilhança.
+
+:::
+
+## Resposta 5.iv.a - priori hierárquica
+
+::: {.resposta}
+Na modelagem hierárquica bayesiana, assumimos que não sabemos nos hiperparâmetros da priori, portanto eles recebem distribuições de probabilidade (as hiperprioris) que consideram essa incerteza:
+
+1º Nível (Modelo Amostral / Verossimilhança):
+
+$$Y_i \mid p \overset{\text{i.i.d.}}{\sim} \text{Binomial}(m = 50, \, p), \quad i = 1, \dots, n \text{[cite: 3, 4]}$$
+
+2º Nível (Priori Condicional):
+
+$$p \mid a, b \sim \text{Beta}(a, b) \text{[cite: 3, 4]}$$
+
+em que $\eta = (a,b)$ representa o vetor de hiperparâmetros desconhecidos.
+
+Primeiramente pensei em fixar um e modelar apenas o outro, mas percebi que o valor de $a$ dependende de $b$ e vice e versa, portanto achei melhor modelar em conjunto.
+
+
+.3º Nível (Hiperpriori do Hiperparâmetro):
+
+Visto que $a$ e $b$ são quantidades contínuas e positivas, utilizareia  distribuição Gama como hiperpriori.
+
+$$a \sim \text{Gama}(a_0, b_0) \text{[cite: 4]}$$
+
+$$b \sim \text{Gama}(c_0, d_0) \text{[cite: 4]}$$
+
+com hiperparâmetros fixos e conhecimos  $a_0 = 11$, $b_0 = 1$, $c_0 = 9$, $d_0 = 1$ (de modo que $E(a) = 11$ e $E(b) = 9$).
+
+Achei melhor escolher essa distribuição por conta do suporte positivo ($0,+\infty$).
+
+Nesse caso, a e b representam o número lcoos em homozigose e heterozigose. No caso, os hiperparâmtros $a_0$, $b_0$, $c_0$ e $d_0$ da hiperpriori gama indicam a incerteza que se tem sobre o histórico de endogamia da população. No caso, $b_0$ e $d_0$ sao os parâmetros de taxa e $a_0$, $c_0$ são os parâmetros de forma, mostrando a expectativa da contagem de homozigotos e heterozigotos.
+
+Ao adicionar essas incertezas, o gráfico fica um pouco mais aberto, mostrando que não temos certeza do grau exatdo de andomia prévia da população (como foi o histórico de seleção?).
+
+Podemos construir um gráfico para mostrar isso de maneira mais didática
+
+
+:::   
+
+``` {r}
+#| label: fig-hierarquica
+#| fig-cap: "Distribuição a priori condicional p | (a, b) para diferentes combinações dos hiperparâmetros."
+#| collapse: true
+
+cenarios <- list(
+  c(a = 5.5,  b = 4.5),   # Amostra prévia menor (mais dispersa)
+  c(a = 11,   b = 9),     # Cenário de referência
+  c(a = 55,   b = 45)     # Amostra prévia maior (mais concentrada)
+)
+cores <- c("darkorange2", "seagreen4", "purple3")
+
+plot(p_grid, dbeta(p_grid, cenarios[[1]][1], cenarios[[1]][2]), type = "l",
+     lwd = 2, col = cores[1], main = expression(paste("Priori Condicional: ", p, " | (a, b)")),
+     xlab = expression(p), ylab = "Densidade condicional", las = 1, ylim = c(0, 10))
+
+for (j in 2:length(cenarios)) {
+  lines(p_grid, dbeta(p_grid, cenarios[[j]][1], cenarios[[j]][2]),
+        lwd = 2, col = cores[j])
+}
+
+legend("topleft",
+       legend = c("a = 5.5, b = 4.5 (n_prev = 10)",
+                  "a = 11, b = 9 (n_prev = 20)",
+                  "a = 55, b = 45 (n_prev = 100)"),
+       col = cores, lwd = 2, bty = "n")
+grid()
+```
+
+## Resposta 5.iv.b - posteriori conjunta na hierárquica
+
+::: {.resposta}
+Pela regra da probabilidade conjunta e pelo Teorema de Bayes, a distribuição a posteriori conjunta dos parâmetros e hiperparâmetros $p(p, a, b \mid \mathbf{y})$ é proporcional ao produto da verossimilhança pela priori condicional e pelas hiperprioris:
+
+$$p(p, a, b \mid \mathbf{y}) \propto p(\mathbf{y} \mid p) \times p(p \mid a, b) \times p(a) \times p(b)$$
+
+Portanto temos os seguintes termos:
+
+Função de Verossimilhança:
+$$p(\mathbf{y} \mid p) \propto p^{\sum_{i=1}^n y_i} (1 - p)^{nm - \sum_{i=1}^n y_i}$$
+
+Distribuição a Priori Condicional:
+Como $a$ e $b$ são variáveis na posteriori conjunta, elas não podem ser eliminadas na constante de proporcionalidade:
+$$p(p \mid a, b) = \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} p^{a - 1} (1 - p)^{b - 1}$$
+
+Hiperprioris Gama independentes:
+
+$$p(a) \propto a^{a_0 - 1} e^{-b_0 a}$$
+
+$$p(b) \propto b^{c_0 - 1} e^{-d_0 b}$$
+
+Juntando tudo, temos:
+
+$$p(p, a, b \mid \mathbf{y}) \propto \left[ p^{\sum_{i=1}^n y_i} (1 - p)^{nm - \sum_{i=1}^n y_i} \right] \left[ \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} p^{a - 1} (1 - p)^{b - 1} \right] \left[ a^{a_0 - 1} e^{-b_0 a} \right] \left[ b^{c_0 - 1} e^{-d_0 b} \right]$$
+
+Agrupando as potências de mesma base $p$ e $1-p$:
+
+$$\boxed{
+  \begin{aligned}
+  p(p, a, b \mid \mathbf{y}) \propto \frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)} \, p^{\left( \sum_{i=1}^n y_i + a - 1 \right)} (1 - p)^{\left( nm - \sum_{i=1}^n y_i + b - 1 \right)} \, a^{a_0 - 1} e^{-b_0 a} \, b^{c_0 - 1} e^{-d_0 b}
+  \end{aligned}
+  }$$
+
+Para essa distribuição, tive ajuda do Gemini, pois não estava conseguindo observar uma distribuição. Para minha surpresa, essa posteriori conjunta não pertence a nenhuma família conhecida. Ao que o Gemini explicou, isso ocorre devido à presença da razão de funções Gama $\frac{\Gamma(a + b)}{\Gamma(a)\Gamma(b)}$, que conecta $a$ e $b$ de forma não linear. Logo, nas distribuições marginais a posteriori $p(p \mid \mathbf{y})$, $p(a \mid \mathbf{y})$ e $p(b \mid \mathbf{y})$ não temos uma forma definida. No tópico 4 é indicado o uso de métodos de amostragem via Cadeias de Markov de Monte Carlo (MCMC). Ainda não aprendemos sobre ele, mas com o auxílio da IA vou tentar fazer um chunck para isso.
+
+
+``` {r}
+#| label: mcmc-posteriori-conjunta
+#| fig-cap: "Trajetória e distribuição marginal a posteriori de p obtida via MCMC (Metropolis-Hastings)."
+#| collapse: true
+
+# 1. Dados observados e hiperparâmetros fixos
+n <- 1000
+m <- 50
+total_ensaios <- n * m
+soma_y <- 30046
+
+a0 <- 11
+b0 <- 1
+c0 <- 9
+d0 <- 1
+
+# 2. Log da densidade da posteriori conjunta (evita overflow numérico)
+log_posteriori <- function(p, a, b) {
+  # Restrições de suporte: 0 < p < 1, a > 0, b > 0
+  if (p <= 0 || p >= 1 || a <= 0 || b <= 0) return(-Inf)
+  
+  # Log da constante Beta: lgamma(a + b) - lgamma(a) - lgamma(b)
+  log_termo_beta <- lgamma(a + b) - lgamma(a) - lgamma(b)
+  
+  # Termo da verossimilhança combinado com a priori Beta
+  log_p_termo <- (soma_y + a - 1) * log(p) + 
+                 (total_ensaios - soma_y + b - 1) * log(1 - p)
+  
+  # Hiperprioris Gama: (forma - 1)*log(x) - taxa*x
+  log_hiperpriori <- (a0 - 1) * log(a) - b0 * a + 
+                     (c0 - 1) * log(b) - d0 * b
+  
+  return(log_termo_beta + log_p_termo + log_hiperpriori)
+}
+
+# 3. Algoritmo de Metropolis-Hastings
+set.seed(123)
+n_iter <- 5000
+amostras <- matrix(NA, nrow = n_iter, ncol = 3)
+colnames(amostras) <- c("p", "a", "b")
+
+# Valores iniciais razoáveis
+cur_p <- 0.60
+cur_a <- 11
+cur_b <- 9
+cur_log_post <- log_posteriori(cur_p, cur_a, cur_b)
+
+for (iter in 1:n_iter) {
+  # Proposta de novos valores (passo aleatório Normal)
+  prop_p <- rnorm(1, mean = cur_p, sd = 0.002)
+  prop_a <- rnorm(1, mean = cur_a, sd = 0.5)
+  prop_b <- rnorm(1, mean = cur_b, sd = 0.5)
+  
+  prop_log_post <- log_posteriori(prop_p, prop_a, prop_b)
+  
+  # Critério de aceitação de Metropolis
+  razao_aceitacao <- exp(prop_log_post - cur_log_post)
+  
+  if (runif(1) < razao_aceitacao) {
+    cur_p <- prop_p
+    cur_a <- prop_a
+    cur_b <- prop_b
+    cur_log_post <- prop_log_post
+  }
+  
+  amostras[iter, ] <- c(cur_p, cur_a, cur_b)
+}
+
+# 4. Descarte do aquecimento (burn-in de 1000 passos)
+amostras_pos_burnin <- amostras[1001:n_iter, ]
+
+# 5. Visualização dos resultados para p
+par(mfrow = c(1, 2))
+
+# Cadeia (Traceplot)
+plot(amostras_pos_burnin[, "p"], type = "l", col = "steelblue",
+     main = "Traceplot de p (Convergência)",
+     xlab = "Iteração pós burn-in", ylab = expression(p))
+
+# Densidade empírica marginal estimada
+plot(density(amostras_pos_burnin[, "p"]), col = "firebrick3", lwd = 2,
+     main = "Marginal Estimada p | y",
+     xlab = expression(p), ylab = "Densidade")
+abline(v = mean(amostras_pos_burnin[, "p"]), lty = 2, col = "black")
+legend("topright", legend = paste0("Média MCMC: ", round(mean(amostras_pos_burnin[, "p"]), 4)),
+       bty = "n", lty = 2)
+
+par(mfrow = c(1, 1))
+```
+
+
+Pelo o que pude entender, usa-se log para facilitar as contas, sendo mais rápido consumindo menos memória. Ademais, para cada novo dado, é observador se há aumento da probabilidade, se sim, ele é aceito, se não, fica-se com probabilidade anterior. Eu não entendi o que seria aquele burn-in, mas pelo o que a IA comentou ele é só uma maneira evitar enviesar o resultado com o valor do chute inicial.
+:::

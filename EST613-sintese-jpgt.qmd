@@ -1,142 +1,1046 @@
 ---
-title: "EST613 - ESTATÍSTICA BAYESIANA - SÍNTESE DE CONTEÚDOS"
-author: "João Paulo Gusmão Teixeira (64316)"
-date: " iniciado em 31/08/2026"
-format: html
-embed-resources: true
+title: "Estatística Bayesiana — síntese para consulta"
+subtitle: "Do teorema de Bayes a uma análise completa"
+author: "João Paulo Gusmão Teixeira (JPGTEIXEIRA)"
+date: "2026-11-26"
+lang: pt-BR
+site: false          # versão da disciplina; para o site: quarto render ... -M site:true
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 2
+    toc-title: "Roteiro"
+    page-layout: full
+    theme: cosmo
+    code-copy: true
+    code-overflow: wrap
+    embed-resources: true
+    fig-width: 6
+    fig-height: 3.6
+    fig-dpi: 150
+execute:
+  warning: false
+  message: false
 ---
 
 ```{=html}
 <style>
-.pergunta {
-  color: #174A7E; /* Azul escuro elegante */
-  font-weight: bold;
-}
+  /* Tipografia e colunas ---------------------------------------------------- */
+  body { font-size: 0.97rem; }
+  main.content { max-width: 1450px; }
+  .columns { gap: 2%; margin-bottom: 1.2rem; }
+  .column.texto  { width: 41%; }
+  .column.codigo { width: 57%; }
+  .column.codigo pre { font-size: 0.78rem; }
+  @media (max-width: 900px) {            /* no celular, uma coluna só */
+    .columns { display: block; }
+    .column.texto, .column.codigo { width: 100% !important; }
+  }
+  /* Caixas -------------------------------------------------------------------- */
+  .atencao { border-left: 4px solid #d9822b; background: #fdf4ea; padding: .55rem .9rem; margin: .7rem 0; border-radius: 4px; }
+  .atencao > p:first-child, .aprofundar > p:first-child { margin-bottom: .2rem; font-weight: 600; }
+  .aprofundar { border-left: 4px solid #2c7fb8; background: #eef5fb; padding: .55rem .9rem; margin: .7rem 0; border-radius: 4px; font-size: .9rem; }
+  .aprofundar ul, .atencao ul { margin-bottom: 0; padding-left: 1.1rem; }
+  .versao { font-size: .85rem; color: #555; border: 1px dashed #bbb; padding: .4rem .8rem; border-radius: 4px; }
+  /* Tabelas de distribuições ------------------------------------------------ */
+  #busca { width: 100%; max-width: 420px; padding: .45rem .7rem; border: 1px solid #aaa; border-radius: 4px; margin-bottom: .6rem; }
+  .tab-dist table { font-size: .80rem; width: 100%; }
+  .tab-dist td:first-child { font-weight: 600; min-width: 9rem; }
+  .tab-dist td { vertical-align: top; }
+  .tab-dist td code { white-space: normal; overflow-wrap: anywhere; font-size: .74rem; }
+  .tab-dist td:nth-child(2) { min-width: 12rem; }
+  /* Roteiro em etapas ------------------------------------------------------ */
+  .etapas { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin: .4rem 0 1rem; }
+  .etapas a { background: #e3eef8; border: 1px solid #2c7fb8; border-radius: 6px; padding: .3rem .6rem; font-size: .88rem; text-decoration: none; color: #1b4f72; }
+  .etapas span { color: #888; }
+  /* Mapa com zoom ------------------------------------------------------------- */
+  #mapa { user-select: none; -webkit-user-select: none; touch-action: none; position: relative; height: 640px; border: 1px solid #ccc; border-radius: 6px; overflow: hidden; cursor: grab; background: #fcfcfc; }
+  #mapa svg { width: 100% !important; height: 100% !important; max-width: none !important; }
+  #mapa-botoes { position: absolute; top: 8px; right: 8px; z-index: 5; }
+  #mapa-botoes button { width: 34px; height: 34px; margin-left: 4px; border: 1px solid #999; border-radius: 4px; background: #fff; font-weight: 700; }
 </style>
 ```
 
-```{r setup, include=FALSE}
-# Bibliotecas
+::: {.versao}
+**Como usar.** Cada tópico tem o texto à esquerda e o código à direita. O código é um *modelo*: copie, troque os dados e o modelo, e siga os mesmos passos. Todos os gráficos vêm de **um único exemplo**: o saldo de gols do Vasco em função do público em São Januário. Os dados são **simulados**, e os parâmetros verdadeiros são assumidamente **mentirosos** (otimistas, sou vascaíno). A vantagem de ter dados simulados é que sabemos a resposta certa. As caixas [laranja]{style="color:#d9822b"} são os cuidados; as [azuis]{style="color:#2c7fb8"}, onde aprofundar. Busquei referenciar tanto o material da disciplina quanto de sites externos.
 
-getwd()
+::: {.content-hidden when-meta="site"}
+*Versão da disciplina EST613 (UFV, 2026/2, Profa. Camila Ferreira Azevedo): os links "Aula" e "Códigos" levam ao material no Drive da turma. Fiz um segundo código que traz somente links externos*
+:::
+:::
 
-pacotes <- c("tidyverse", "readr", "knitr", "kableExtra")
-
-
-for (p in pacotes) {
-    if (!require(p, character.only = TRUE)) {
-        install.packages(p)
-        library(p, character.only = TRUE)
-    }
-}
-
-knitr::opts_chunk$set(
-    echo = TRUE,
-    warning = FALSE,
-    message = FALSE,
-    fig.align = "center",
-    tidy.opst = list(width.cutoff = 60),
-    tidy = TRUE
-)
+```{r pacotes}
+#| include: false
+library(rstan); library(coda); library(loo); library(bayesplot); library(ggplot2); library(patchwork)
+options(mc.cores = 4); rstan_options(auto_write = FALSE)
+theme_set(theme_bw(base_size = 11)); color_scheme_set("viridis")
 ```
 
-# Agosto 
-Em agosto, pudemos iniciar os estudos em Estística Bayesiana.
+# 1. Bayes em uma página
 
-## 17/08/2026 - Introdução
-Aula introdutória. Ficamos sabendo dos assuntos que serão abordados, a distribuição do rendimento no período e demais informações.
+**De onde vem.** Thomas Bayes (1702–1761), reverendo e matemático inglês. O ensaio foi publicado depois da sua morte, em 1763, por Richard Price: [*An Essay towards Solving a Problem in the Doctrine of Chances*](https://royalsocietypublishing.org/rstl/article/doi/10.1098/rstl.1763.0053/119736/LII-An-essay-towards-solving-a-problem-in-the).
 
-Sem perder tempo, começamos a entender como foi formulado o Teorema de Bayes, sendo seu criado **Thomas Bayes (1702-1761)**, um reverendo e matemático inglês. Uma curiosidade é que sua publicação se deu de maneira póstuma, graças a **Richard Price**. A obra é intitulada “*An Essay towards Solving a Problem in the Doctrine of Chances*”. Philosophical Transactions of the Royal Society (vol. 53, pp. 370–418)."
+**A ideia central** é que a probabilidade também mede **grau de crença**, e não só frequência, portanto temos duas leituras:
 
-::: {.callout-note}
-# Diferença entre a frequentista e a bayesiana
-Uma primeira questão que ficou bem esclarecida é que na estatística bayesiana o conhecimento sobre determinado evento não é ignorado, e sim incorporado à estatítica que está sendo construida. Daí estende o conceito de **probabilidade subjetiva** 
+- **objetiva:** vem de um mecanismo aleatório conhecido (dado, baralho, Mega-Sena);
+- **subjetiva:** é a crença sobre algo incerto: "qual a chance de chover amanhã?", "qual a chance de o Vasco vencer, dado que joga contra o time x?". Esta segunda pergunta vai nos acompanhar no documento inteiro.
 
+Sem informação para preferir um resultado a outro, todos são igualmente prováveis: **princípio da razão insuficiente** (ou da indiferença). Um torcedor vascaíno, claro, nunca está nessa situação.
+
+O quadro abaixo resume as principais diferenças entre a estatística frequentista e a bayesiana.
+
+| | Frequentista | Bayesiana |
+|---|---|---|
+| Parâmetro $\theta$ | fixo e desconhecido | desconhecido e **descrito por uma distribuição** |
+| O que é aleatório | o estimador $\hat\theta$ (muda com a amostra) | $\theta$ (a nossa incerteza sobre ele) |
+| Informação prévia | não entra | entra pela **priori** (inclusive a fé do torcedor) |
+| Resultado | estimativa + IC + valor-p | **distribuição a posteriori** inteira |
+| Intervalo de 95% | 95% dos intervalos *construídos assim* contêm $\theta$ | $P(\theta \in \text{intervalo} \mid y) = 0{,}95$ |
+| Hipóteses | rejeita ou não $H_0$ | $P(H_0 \mid y)$ e $P(H_1 \mid y)$ |
+
+### O teorema
+
+$$
+\underbrace{p(\theta \mid y)}_{\text{posteriori}}
+= \frac{\overbrace{p(y \mid \theta)}^{\text{verossimilhança}}\;\overbrace{p(\theta)}^{\text{priori}}}
+       {\underbrace{p(y)}_{\text{evidência}}}
+\;\;\propto\;\; p(y \mid \theta)\,p(\theta)
+$$
+
+- **priori** $p(\theta)$: o que se sabe de $\theta$ *antes* dos dados;
+- **verossimilhança** $p(y \mid \theta)$: o quanto cada valor de $\theta$ explica os dados (é função de $\theta$, com $y$ fixo);
+- **evidência** $p(y) = \int p(y\mid\theta)p(\theta)\,d\theta$: constante que faz a posteriori integrar 1. Para inferir sobre $\theta$, muitas vezes nem precisa ser calculada; na comparação de modelos (fator de Bayes), passa a ser fundamental;
+- **posteriori** $p(\theta \mid y)$: o que se sabe *depois*. Ela vira a priori da próxima vez que chegarem dados (**aprendizado sequencial**).
+
+**Exemplo com conta fechada (Beta–Binomial).** $\theta$ = chance de o Vasco vencer um jogo. A priori é "de torcedor", Beta(8, 2): antes de qualquer jogo, já se acha que o Vasco vence 80% das vezes. Os dados (simulados, e generosos) dizem que o Vasco venceu 15 dos últimos 20 jogos. A conta fecha porque a Beta é conjugada da Binomial, então a posteriori sai da mesma família da priori, só com os parâmetros atualizados (para saber mais, vá para a [seção 2.4](#posteriori)). Com priori Beta($a$, $b$) e $y$ vitórias em $n$ jogos, a posteriori é Beta($a + y$, $b + n - y$) = Beta(23, 7).
+
+```{r bayes-beta}
+#| fig-width: 7
+#| fig-height: 3
+#| out-width: "75%"
+y <- 15; n <- 20      # dados: 15 vitórias em 20 jogos
+a <- 8;  b <- 2       # priori de torcedor: Beta(8, 2)
+th <- seq(0, 1, length.out = 400)
+d <- rbind(
+  data.frame(th, dens = dbeta(th, a, b), curva = "priori (de torcedor)"),
+  data.frame(th, dens = dbeta(th, y + 1, n - y + 1),
+             curva = "verossimilhança (normalizada)"),
+  data.frame(th, dens = dbeta(th, a + y, b + n - y),
+             curva = "posteriori"))
+ggplot(d, aes(th, dens, colour = curva)) +
+  geom_line(linewidth = 1) +
+  labs(x = expression(theta ~ "= chance de o Vasco vencer"),
+       y = "densidade", colour = NULL)
+(a + y) / (a + b + n)  # média a posteriori
+```
+
+A posteriori fica **entre** a priori e os dados, mais perto de quem tem mais informação. Aqui, 20 jogos pesam o dobro dos "10 jogos imaginários" da priori.
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Bayes Rules!, caps. 1–3](https://www.bayesrulesbook.com/) (livro aberto, muito didático) · [O ensaio de 1763](https://doi.org/10.1098/rstl.1763.0053)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 1 – Introdução e probabilidade](https://drive.google.com/file/d/1yxZ7o-tXp-hPLa0khXaPgnodS3tYObrq/view) · Códigos: [Módulo I – Teorema de Bayes por simulação](https://drive.google.com/file/d/1To6E3BMAk1cVenkf37pT4BKkgbyDujr7/view)
 :::
+:::
+
+# 2. O roteiro de uma análise
+
+```{=html}
+<div class="etapas">
+<a href="#pergunta">Pergunta e dados</a><span>→</span>
+<a href="#verossimilhanca">Verossimilhança</a><span>→</span>
+<a href="#priori">Priori + checagem a priori</a><span>→</span>
+<a href="#posteriori">Posteriori (fórmula ou MCMC)</a><span>→</span>
+<a href="#convergencia">Convergência</a><span>→</span>
+<a href="#adequacao">Adequação</a><span>→</span>
+<a href="#comparacao">Comparação</a><span>→</span>
+<a href="#hipoteses">Inferência e hipóteses</a><span>→</span>
+<a href="#sensibilidade">Sensibilidade</a>
+</div>
+```
+
+Se a convergência ou a adequação falharem, volte ao modelo (verossimilhança e priori).
+
+Ajustar não é o fim: **ajustar → verificar → comparar → interpretar**. Cada passo abaixo segue esta ordem.
+
+## 2.1 Pergunta e dados {#pergunta}
 
 :::: {.columns}
+::: {.column .texto}
 
-::: {.column width="48%"}
-#### Probabilidade objetiva
-* **Definição de Probabilidade:** é baseada em um mecanismo aleatório conhecido.
-* **Exemplos:**
-    * lançamento de dados
-    * retirada de uma carta de um baralho
-    * Sorteio de Mega-Sena
+Antes de qualquer conta: **o que se quer saber** (um parâmetro? uma previsão? comparar grupos?) e **como os dados foram gerados**. O modelo é uma história de como os dados nasceram.
+
+**Pergunta:** a torcida empurra o Vasco? E qual a chance de vencer o próximo jogo?
+
+**Dados:** 60 jogos em São Januário. $y$ = saldo de gols (gols do Vasco − gols do adversário); $x$ = público, em milhares. O modelo:
+
+$$
+y_i = \beta_0 + \beta_1 x_i + \varepsilon_i,\qquad \varepsilon_i \sim N(0, \sigma^2)
+$$
+
+Valores verdadeiros (mentirosos): $\beta_0 = 0$ (de portões fechados, empate), $\beta_1 = 0{,}12$ gol a mais por mil torcedores (com São Januário lotado, quase 3 gols de saldo), $\sigma = 1{,}2$.
+
+**Vitória** = saldo positivo. Então a chance de vencer não é um parâmetro do modelo: ela sai da **preditiva a posteriori**, $P(\tilde y > 0 \mid y)$ (ver [2.10](#hipoteses)).
+
+::: {.atencao}
+Atenção
+
+- Simular dados com valores conhecidos e ver se o modelo os recupera é o melhor teste de um código novo (mesmo que os valores sejam mentirosos).
+- O saldo de gols é inteiro, e a Normal é contínua: é uma aproximação. Voltamos a isso na [adequação](#adequacao).
+- Olhe os dados antes (gráfico, escala, valores impossíveis, faltantes).
 :::
 
-::: {.column width="2%"}
-<!-- Espaçador -->
 :::
+::: {.column .codigo}
 
-::: {.column width="48%"}
-#### Probabilidade subjetiva
-* **Definição de Probabilidade:** baseada em crença ou sobre um evento
-* **Exemplos:**
-    * Qual a chance de chover amanhã?
-    * Qual a chance de um investimento valorizar?
-    * Qual a chance do Vasco vencer?
-    * Qual a chance de o Vasco vencer, dado que ele vai jogar contra o time x?
+```{r dados}
+#| fig-height: 2.6
+set.seed(2026)
+n  <- 60                              # jogos
+x <- round(runif(n, 5, 22), 1)        # público (mil)
+y <- round(0 + 0.12 * x + rnorm(n, 0, 1.2))   # saldo de gols
+dados <- list(N = n, x = x, y = y)    # lista: formato do Stan
+table(resultado = sign(y))            # -1 derrota, 0 empate, 1 vitória
 
-:::
+ggplot(data.frame(x, y), aes(x, y)) +
+  geom_jitter(height = 0.1, width = 0) +
+  geom_hline(yintercept = 0, linetype = 2) +
+  labs(x = "público em São Januário (mil)", y = "saldo de gols")
+```
 
-::::
-
-Outra ideia que ficou clara nesse momento inicial diz respeito ao **Princípio da razão insuficiente**. Eu o entendi como o **Princípio da Ignorância**. Ou seja, se não tem muita informação sobre algo pra mostrar que tal situação é mais provável que outra, fazemos por bem considerar que todas elas são igualmente prováveis.
-
-::: {.callout-note}
-# Princípio da razão insuficiente (da indiferença)
-
-Quando **não há evidências** ou informações que indiquem que um resultado é mais provável que outro, consideramos todos os resultados **igualmente prováveis**.
-
-
-:::
-
-Dadas essas questões, é necessário entender sobre distribuições de probabilidade, que são usadas quando o obejtivo do estudo não é um evento determinístico ($V = \frac{\Delta S}{\Delta T} $, por exemplo). Ou seja, quando há evento probabilístico ou aleatório. Neste, mesmo quando se conhece todas as condições, não existe certeza sobre o resultado, portanto é analisado o comportamento probabilístico dos possíveis resultados.
-
-::::::{.columns}
-
-:::::{.column width="50%"}
-#### Conjuntos finitos e infinitos
-::::{.columns}
-:::{.column width="50%"}
-##### Finitos
-* É aquele cuja a cardinalidad pode ser representada por um númerop inteiro
-* $A {boneco daquele incone}$ $|A| = 5$
-* 
-:::
-
-:::{.column width="50%"}
-##### Infinitos
-- 1
-- 2
-- 3
 :::
 ::::
 
-:::::
+## 2.2 Verossimilhança {#verossimilhanca}
 
-:::::{.column width="50%"}
-#### Conjuntos Enumeráveis e não-enumeráveis
+:::: {.columns}
+::: {.column .texto}
 
-::::{.columns}
-:::{.column width="50%"}
-##### Enumeráveis
-- 1
+É a probabilidade dos dados vista como **função dos parâmetros**. Com observações independentes, é o produto das densidades:
 
+$$
+L(\theta \mid y) = \prod_{i=1}^{n} p(y_i \mid \theta)
+$$
+$$
+\log L(\theta \mid y) = \sum_{i=1}^{n} \log p(y_i \mid \theta)
+$$
+
+Ela não é uma distribuição para $\theta$ (não precisa integrar 1). O valor que a maximiza é o EMV, o ponto de partida frequentista.
+
+::: {.atencao}
+Atenção
+
+- Trabalhe sempre com o **log** (o produto de muitas densidades pequenas vira zero no computador).
+- Escolha a família pelo tipo do dado: contagem → Poisson/Binomial negativa; proporção → Binomial; contínuo positivo → Gama/Lognormal; contínuo → Normal ou *t* (mais robusta a valores extremos).
+- Guarde o **log-verossimilhança por observação** (`log_lik`): é ele que o WAIC e o LOO usam.
 :::
 
-:::{.column width="50%"}
-##### Não-enumeráveis
-- 1 
+:::
+::: {.column .codigo}
+
+```{r verossimilhanca}
+# log-verossimilhança da regressão
+loglik <- function(b0, b1, sigma, x, y)
+  sum(dnorm(y, mean = b0 + b1 * x, sd = sigma, log = TRUE))
+
+loglik(0, 0.12, 1.2, x, y)    # valores verdadeiros: maior
+loglik(-1, 0, 1.2, x, y)      # "Vasco perde sempre": muito menor
+```
+
 :::
 ::::
 
-:::::
-::::::
+::: {.aprofundar}
+Para aprofundar
 
+- [Bayes Rules!, cap. 2](https://www.bayesrulesbook.com/) · [Tabela de distribuições](#sec-dist) (escolher a família)
 
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 3 – Função de verossimilhança](https://drive.google.com/file/d/1WjsCl2VQY13T9KYweR-auimW-BwQhiBw/view) · Códigos: [Módulo II – Verossimilhança, EMV, informação de Fisher](https://drive.google.com/file/d/1rXh5NOMvNpHzAKaMXUyyXyF8PLaVgPhG/view) · [Tópico 2 – Variável aleatória](https://drive.google.com/file/d/1AY3xJSWp6AQwy0w3v3ZlY0CviEhbWcTr/view)
+:::
+:::
 
+## 2.3 Priori e checagem preditiva a priori {#priori}
 
+:::: {.columns}
+::: {.column .texto}
 
+A priori resume o que se sabe **antes** dos dados. Tipos:
 
+- **informativa:** traz conhecimento real (experimentos anteriores, literatura);
+- **fracamente informativa:** só descarta o absurdo (o padrão recomendado hoje);
+- **não informativa / vaga:** quase plana; cuidado, "plana" depende da escala;
+- **conjugada:** gera posteriori da mesma família (conta fechada; ver [tabela](#sec-dist));
+- **imprópria:** não integra 1; só vale se a posteriori for própria.
+
+**Checagem preditiva a priori:** sorteie parâmetros **só da priori**, simule dados e veja se fazem sentido. Se a priori gera placares de 15 a 0 (para qualquer lado), ela está larga demais.
+
+::: {.atencao}
+Atenção
+
+- **Desvio-padrão × variância:** o livro e o JAGS escrevem $N(\mu, \sigma^2)$ ou $N(\mu, \tau)$ com precisão $\tau = 1/\sigma^2$; o R e o Stan usam o **desvio-padrão**.
+- Para desvios-padrão: half-Normal ou half-Cauchy (Gelman, 2006); evite Inv-Gama($\varepsilon$, $\varepsilon$).
+- Com **poucos grupos**, a priori dos desvios-padrão pesa muito: faça [sensibilidade](#sensibilidade).
+:::
+
+:::
+::: {.column .codigo}
+
+```{r prior-preditiva}
+#| fig-height: 2.6
+# priori: b0 ~ N(0, 2), b1 ~ N(0, 0.5), sigma ~ half-N(0, 2)
+S  <- 100                         # 100 "campeonatos possíveis"
+b0 <- rnorm(S, 0, 2); b1 <- rnorm(S, 0, 0.5)
+sg <- abs(rnorm(S, 0, 2))
+y_prior <- sapply(1:S, function(s)
+  rnorm(n, b0[s] + b1[s] * x, sg[s]))
+
+ggplot(data.frame(saldo = as.vector(y_prior)), aes(saldo)) +
+  geom_histogram(bins = 60, fill = "grey60") +
+  geom_vline(xintercept = range(y), colour = "red", linetype = 2) +
+  labs(title = "Saldos de gols simulados só pela priori",
+       subtitle = "vermelho = faixa dos dados")
+mean(abs(y_prior) > 7)            # placares absurdos (7+ gols de saldo)
+```
+
+Aqui a priori é **vaga**: gera muitos saldos impossíveis, como 15 a 0. Os dados vão dominar, mas vale saber disso (e mencionar). Uma priori "de torcedor", que só aceita vitórias, seria o erro oposto: veja a [sensibilidade](#sensibilidade).
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Recomendações de priori do Stan](https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations) · [Gelman (2006): priori para variâncias](https://doi.org/10.1214/06-BA117A) · [Bayesian workflow (Gelman et al., 2020)](https://arxiv.org/abs/2011.01808)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 4 – Distribuição a priori](https://drive.google.com/file/d/1GySltdMUQ0sJGyHV4UgNcRWIdiyph198/view) · [Tópico 9 – Checagens preditivas](https://drive.google.com/file/d/1CjiIYuMoV3VE4JcJXMP0oE8bg8VZT-K9/view) · Códigos: [Módulo IV – Aprendizado bayesiano e efeito da priori](https://drive.google.com/file/d/1yuWeLi8VK84vIMb8UZVRTEGelOjTU2FD/view)
+:::
+:::
+
+## 2.4 Posteriori: fórmula fechada ou MCMC {#posteriori}
+
+:::: {.columns}
+::: {.column .texto}
+
+**Com priori conjugada**, a posteriori sai por conta (inferência exata):
+
+| Dados | Priori | Posteriori |
+|---|---|---|
+| Binomial($n$, $p$) | Beta($a$, $b$) | Beta($a + y$, $b + n - y$) |
+| Poisson($\lambda$) | Gama($\alpha$, $\beta$) | Gama($\alpha + \sum y$, $\beta + n$) |
+| Normal($\mu$, $\sigma^2$ conhecido) | N($\mu_0$, $\tau_0^2$) | N, média ponderada pelas precisões |
+
+Na Normal: $\;\mu_{\text{post}} = \dfrac{\mu_0/\tau_0^2 + n\bar y/\sigma^2}{1/\tau_0^2 + n/\sigma^2}$.
+
+**Sem forma fechada** (quase sempre: vários parâmetros, priori não conjugada), sorteamos amostras da posteriori com **MCMC**. O Stan só precisa do modelo escrito: `data` (o que se observa), `parameters` (o que se estima), `model` (priori + verossimilhança) e, opcionalmente, `generated quantities` (o que calcular com cada amostra: `log_lik`, dados replicados `y_rep`).
+
+**Estimação × predição.** Estimar é falar de $\theta$ ($p(\theta\mid y)$); prever é falar de um dado novo ($p(\tilde y \mid y) = \int p(\tilde y\mid\theta)p(\theta\mid y)d\theta$, a **preditiva a posteriori**).
+
+:::
+::: {.column .codigo}
+
+```{stan output.var = "modelo_reg"}
+data {
+  int<lower=1> N;
+  vector[N] x;
+  vector[N] y;
+}
+transformed data {
+  real xbar = mean(x);    // centrar x: menos correlação
+}
+parameters {
+  real b0c;               // saldo no público médio
+  real b1;
+  real<lower=0> sigma;    // com normal(): half-Normal
+}
+model {
+  b0c   ~ normal(0, 2);   // priori
+  b1    ~ normal(0, 0.5);
+  sigma ~ normal(0, 2);
+  // verossimilhança
+  y ~ normal(b0c + b1 * (x - xbar), sigma);
+}
+generated quantities {
+  real b0 = b0c - b1 * xbar;  // saldo com estádio vazio
+  vector[N] log_lik;          // para WAIC/LOO
+  vector[N] y_rep;            // checagem preditiva
+  for (i in 1:N) {
+    real mu = b0c + b1 * (x[i] - xbar);
+    log_lik[i] = normal_lpdf(y[i] | mu, sigma);
+    y_rep[i]   = normal_rng(mu, sigma);
+  }
+}
+```
+
+```{r ajuste}
+# 4 cadeias x (2000 - 1000 de aquecimento) = 4000 amostras
+fit <- sampling(modelo_reg, data = dados,
+                chains = 4, iter = 2000, warmup = 1000,
+                seed = 2026, refresh = 0)
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [BDA3, caps. 2–3](https://sites.stat.columbia.edu/gelman/book/BDA3.pdf) (PDF gratuito) · [Manuais do Stan](https://mc-stan.org/docs/)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 5 – Distribuição a posteriori](https://drive.google.com/file/d/1k2DWH8OZAG2_0oacCV7j9M1LD1zIM9Q0/view) · Códigos: [Módulo IV](https://drive.google.com/file/d/1yuWeLi8VK84vIMb8UZVRTEGelOjTU2FD/view)
+:::
+:::
+
+## 2.5 Como o MCMC funciona
+
+:::: {.columns}
+::: {.column .texto}
+
+Uma **cadeia de Markov** anda pelo espaço dos parâmetros de forma que, depois de um tempo, os pontos visitados são amostras da posteriori. Os primeiros pontos dependem do chute inicial e são descartados (**aquecimento**, *burn-in* ou *warmup*).
+
+| | Gibbs | Metropolis–Hastings | NUTS / HMC (Stan) |
+|---|---|---|---|
+| Como anda | um parâmetro por vez, da condicional completa | propõe um passo aleatório; aceita com prob. $\alpha$ | passo longo guiado pelo **gradiente**; aceita com prob. $\alpha$ |
+| Precisa de | condicionais conhecidas (conjugadas) | só a posteriori (até uma constante) | posteriori diferenciável (parâmetros contínuos) |
+| Ponto fraco | lento com parâmetros correlacionados | passos minúsculos em muitas dimensões | não aceita parâmetros discretos |
+| Software | JAGS, BUGS | à mão | Stan |
+
+Ao lado, um Metropolis **mal ajustado** (passo pequeno demais) no mesmo modelo, para comparar com o Stan nos diagnósticos.
+
+:::
+::: {.column .codigo}
+
+```{r metropolis-ruim}
+# log-posteriori (a menos de uma constante) = log L + log priori
+logpost <- function(p) {
+  if (p[3] <= 0) return(-Inf)
+  loglik(p[1], p[2], p[3], x, y) +
+    dnorm(p[1], 0, 2, log = TRUE) +
+    dnorm(p[2], 0, 0.5, log = TRUE) +
+    dnorm(p[3], 0, 2, log = TRUE)
+}
+metropolis <- function(inicio, n_iter = 2000, passo = 0.01) {
+  cadeia <- matrix(NA, n_iter, 3,
+                   dimnames = list(NULL, c("b0", "b1", "sigma")))
+  atual <- inicio
+  for (t in 1:n_iter) {
+    prop <- atual + rnorm(3, 0, passo)          # proposta
+    razao <- logpost(prop) - logpost(atual)
+    if (log(runif(1)) < razao) atual <- prop    # aceita?
+    cadeia[t, ] <- atual
+  }
+  cadeia
+}
+inicios <- list(c(-2, 0, 3), c(3, -0.2, 1),
+                c(0, 0.4, 4), c(2, 0.2, 2))
+ruim <- lapply(inicios, metropolis)   # 4 cadeias
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Betancourt: introdução conceitual ao HMC](https://arxiv.org/abs/1701.02434) · [BDA3, caps. 10–12](https://sites.stat.columbia.edu/gelman/book/BDA3.pdf)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 6 – Computação bayesiana](https://drive.google.com/file/d/1GUn5TwU8NuqSI4VUW4r4FquML_pdFPCl/view) · Códigos: [Módulo V – Monte Carlo e MCMC no R](https://drive.google.com/file/d/1AkAbtOqzPj69yYlNblwviUexNiRQjQWh/view)
+:::
+:::
+
+## 2.6 Convergência: a cadeia é confiável? {#convergencia}
+
+:::: {.columns}
+::: {.column .texto}
+
+Convergência quer dizer que as cadeias **esqueceram o ponto de partida** e **exploraram a posteriori toda**. Nenhum diagnóstico prova convergência; eles só apontam problemas. Use vários.
+
+| Diagnóstico | O que observar | Bom sinal |
+|---|---|---|
+| **Traço** (*traceplot*) | as cadeias se misturam? | "lagarta peluda": todas sobrepostas, sem tendência |
+| **Autocorrelação** | quanto uma amostra lembra a anterior | cai a ~0 em poucas defasagens |
+| **Gelman–Rubin** ($\hat R$) | variância entre × dentro das cadeias | $\hat R < 1{,}01$ |
+| **ESS** (tamanho efetivo) | quantas amostras *independentes* equivalem | > 400 (≥ 100 por cadeia) |
+| **MCSE** | erro do próprio MCMC na média | pequeno frente ao DP da posteriori |
+| **Geweke** | início × fim da cadeia têm a mesma média? | $\lvert z \rvert < 1{,}96$ |
+| **Heidelberger–Welch** | a cadeia é estacionária? | "passed" (a parte *halfwidth* falha à toa quando a média é ~0, como $\beta_0$ aqui) |
+| **Divergências** (só HMC) | o amostrador encontrou geometria difícil | **zero** |
+
+::: {.atencao}
+Atenção: o *thin*
+
+- *Thin* = guardar só 1 a cada *k* amostras. Ele **não melhora** a estimativa: joga informação fora (Link & Eaton, 2012). Serve só para economizar memória com cadeias longas e muito autocorrelacionadas (comum no JAGS).
+- Quem diz se há amostras suficientes é o **ESS/MCSE**, não o número de iterações. Por isso o Stan converge com 2.000 iterações, enquanto Gibbs costuma precisar de dezenas de milhares.
+- Raftery–Lewis exige cadeias longas (≥ 3.746 por cadeia); não se aplica a rodadas curtas de NUTS.
+- Divergências no Stan: aumentar `adapt_delta` (ex.: 0,99) ou **reparametrizar** (forma não centrada). [Guia de avisos](https://mc-stan.org/misc/warnings.html).
+:::
+
+:::
+::: {.column .codigo}
+
+```{r convergencia}
+#| fig-height: 4.4
+# arrays no formato [iteração, cadeia, parâmetro]
+boa <- as.array(fit, pars = c("b0", "b1", "sigma"))
+ruim_arr <- aperm(simplify2array(ruim), c(1, 3, 2))
+dimnames(ruim_arr)[[3]] <- c("b0", "b1", "sigma")
+
+(mcmc_trace(boa, pars = "b1") + ggtitle("Stan (NUTS): boa")) /
+(mcmc_trace(ruim_arr, pars = "b1") +
+   ggtitle("Metropolis mal ajustado: ruim"))
+```
+
+```{r autocorrelacao}
+#| fig-height: 2.8
+(mcmc_acf(boa, pars = "b1", lags = 30) + ggtitle("boa")) |
+(mcmc_acf(ruim_arr, pars = "b1", lags = 30) + ggtitle("ruim"))
+```
+
+```{r diagnosticos}
+#| message: true
+#| collapse: true
+# Stan: média, DP, quantis, n_eff (ESS), Rhat e se_mean (MCSE)
+print(fit, pars = c("b0", "b1", "sigma"), probs = c(.025, .975))
+check_hmc_diagnostics(fit)        # divergências e treedepth
+```
+
+```{r diagnosticos-coda}
+#| collapse: true
+# coda: diagnósticos clássicos (servem para qualquer amostrador)
+mc_boa  <- As.mcmc.list(fit, pars = c("b0", "b1", "sigma"))
+mc_ruim <- mcmc.list(lapply(ruim, mcmc))
+gelman.diag(mc_boa)$psrf[, 1]     # ~1: ok
+gelman.diag(mc_ruim)$psrf[, 1]    # muito > 1: não convergiu
+effectiveSize(mc_boa)             # milhares
+effectiveSize(mc_ruim)            # poucas dezenas
+geweke.diag(mc_boa[[1]])$z        # |z| < 1,96
+heidel.diag(mc_boa[[1]])          # "passed" na estacionariedade
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Vehtari et al. (2021): o R-hat atual e o ESS](https://doi.org/10.1214/20-BA1221) · [Link & Eaton (2012): sobre o *thin*](https://doi.org/10.1111/j.2041-210X.2011.00131.x)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 6](https://drive.google.com/file/d/1GUn5TwU8NuqSI4VUW4r4FquML_pdFPCl/view) · Códigos: [Módulo V – coda, rstan, rjags](https://drive.google.com/file/d/1AkAbtOqzPj69yYlNblwviUexNiRQjQWh/view) · [Módulo VI](https://drive.google.com/file/d/1X-lk5_80cNhDkm61Q_AnvNWv8iuMBH2d/view)
+:::
+:::
+
+## 2.7 Resumir a posteriori
+
+:::: {.columns}
+::: {.column .texto}
+
+Com as amostras, qualquer resumo é uma conta simples sobre elas:
+
+- **ponto:** média (perda quadrática), mediana (perda absoluta) ou moda;
+- **intervalo de credibilidade de 95%:** entre os quantis 2,5% e 97,5%;
+- **HPD de 95%:** o **menor** intervalo com 95% de probabilidade. Igual ao anterior em posterioris simétricas; melhor nas assimétricas (variâncias, proporções perto de 0 ou 1);
+- **qualquer função** dos parâmetros: calcule em cada amostra e resuma (ex.: saldo esperado com São Januário lotado, 22 mil).
+
+Leitura correta: "dado o modelo e os dados, há 95% de probabilidade de $\beta_1$ (o efeito de mil torcedores) estar entre a e b". Leitura de torcedor: "é certeza". Não é.
+
+:::
+::: {.column .codigo}
+
+```{r resumo}
+#| fig-height: 2.6
+#| collapse: true
+am <- rstan::extract(fit)     # lista: um vetor por parâmetro
+c(media = mean(am$b1), mediana = median(am$b1))
+quantile(am$b1, c(.025, .975))                     # credibilidade
+HPDinterval(as.mcmc(cbind(b1 = am$b1)), 0.95)      # HPD
+
+saldo_lotado <- am$b0 + am$b1 * 22   # função dos parâmetros
+quantile(saldo_lotado, c(.025, .5, .975))
+
+mcmc_areas(boa, pars = "b1", prob = 0.95) +
+  geom_vline(xintercept = 0.12, linetype = 2)  # verdadeiro
+```
+
+:::
+::::
+
+## 2.8 Adequação: o modelo reproduz os dados? {#adequacao}
+
+:::: {.columns}
+::: {.column .texto}
+
+Convergir **não** quer dizer que o modelo é bom. A **checagem preditiva a posteriori** simula dados novos ($y^{rep}$) com cada amostra da posteriori e compara com os reais.
+
+- **Gráfico:** a densidade dos $y^{rep}$ deve cobrir a de $y$.
+- **Valor-p bayesiano:** $P\big(T(y^{rep}) \ge T(y) \mid y\big)$ para uma estatística $T$ (média, DP, mínimo, máximo...). Perto de 0,5 é bom; perto de 0 ou 1 mostra o que o modelo **não** captura.
+- Em modelos hierárquicos, verifique em **vários níveis**: global, por grupo e por indivíduo.
+
+::: {.atencao}
+Atenção
+
+- Escolha estatísticas que o modelo **não** ajusta diretamente: a média quase sempre passa; o máximo, o mínimo e a assimetria revelam mais.
+- No gráfico, $y$ tem "degraus" (o saldo é inteiro) e $y^{rep}$ é liso: é a aproximação Normal aparecendo. Para gols, o modelo mais fiel seria Poisson para os gols de cada time (Skellam para o saldo).
+:::
+
+:::
+::: {.column .codigo}
+
+```{r ppc}
+#| fig-height: 2.8
+#| collapse: true
+y_rep <- am$y_rep             # amostras x observações
+ppc_dens_overlay(y, y_rep[1:50, ]) +
+  ggtitle("y (escuro) x 50 y_rep (claros)")
+
+p_bayes <- function(T) mean(apply(y_rep, 1, T) >= T(y))
+sapply(list(media = mean, dp = sd, minimo = min, maximo = max), p_bayes)
+```
+
+```{r ppc-stat}
+#| fig-height: 2.4
+# onde cai o máximo real entre os simulados?
+ppc_stat(y, y_rep, stat = "max", binwidth = 0.5)
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Gabry et al. (2019): visualização no fluxo bayesiano](https://doi.org/10.1111/rssa.12378) · [Checagens preditivas no bayesplot](https://mc-stan.org/bayesplot/articles/graphical-ppcs.html)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 9 – Avaliação e extensões de modelos](https://drive.google.com/file/d/1CjiIYuMoV3VE4JcJXMP0oE8bg8VZT-K9/view)
+:::
+:::
+
+## 2.9 Comparação de modelos {#comparacao}
+
+:::: {.columns}
+::: {.column .texto}
+
+Compara modelos pela capacidade de **prever** (menor critério = melhor):
+
+| Critério | Ideia | Cuidado |
+|---|---|---|
+| **DIC** | desvio médio + $p_D$ (penaliza a complexidade) | supõe posteriori ~normal; usa só a média |
+| **WAIC** | ajuste por observação − penalidade (variância do `log_lik`) | instável com observações influentes |
+| **LOO** (PSIS) | aproxima "tirar uma observação e prever" | confiável se Pareto $k < 0{,}7$ |
+| **Fator de Bayes** | razão das evidências $p(y\mid M_1)/p(y\mid M_0)$ | muito sensível à priori |
+
+$\text{DIC} = \bar D + p_D$, com $D(\theta) = -2\log L(\theta)$ e $p_D = \bar D - D(\bar\theta)$.
+
+::: {.atencao}
+Atenção
+
+- No LOO, olhe a **diferença** (`elpd_diff`) junto com o **erro-padrão**: diferença menor que ~2 EP não separa os modelos.
+- Pareto $k > 0{,}7$: a aproximação falhou para aquela observação. Em modelos com um parâmetro por observação (ou grupo), faça o LOO **por grupo**.
+:::
+
+:::
+::: {.column .codigo}
+
+```{stan output.var = "modelo_nulo"}
+data { int<lower=1> N; vector[N] x; vector[N] y; }
+parameters { real b0; real<lower=0> sigma; }
+model {
+  b0 ~ normal(0, 2); sigma ~ normal(0, 2);
+  y ~ normal(b0, sigma);       // sem o público
+}
+generated quantities {
+  vector[N] log_lik;
+  for (i in 1:N) log_lik[i] = normal_lpdf(y[i] | b0, sigma);
+}
+```
+
+```{r comparacao}
+#| collapse: true
+fit0 <- sampling(modelo_nulo, data = dados,
+                 seed = 2026, refresh = 0)
+
+ll1 <- extract_log_lik(fit)       # amostras x observações
+ll0 <- extract_log_lik(fit0)
+cad <- rep(1:4, each = 1000)      # cadeia de cada amostra
+loo1 <- loo(ll1, r_eff = relative_eff(exp(ll1), cad))
+loo0 <- loo(ll0, r_eff = relative_eff(exp(ll0), cad))
+loo_compare(list(com_torcida = loo1, sem_torcida = loo0))
+# diferença ~1,7 erro-padrão: indício a favor da torcida, não certeza
+sum(loo1$diagnostics$pareto_k > 0.7)   # observações problemáticas
+c(com = waic(ll1)$estimates["waic", 1],
+  sem = waic(ll0)$estimates["waic", 1])
+
+# DIC "à mão" (como no material da disciplina)
+dic <- function(ll, ll_media) {
+  D_bar <- mean(-2 * rowSums(ll))
+  D_hat <- -2 * sum(ll_media)
+  c(DIC = 2 * D_bar - D_hat, pD = D_bar - D_hat)
+}
+mu_hat <- mean(am$b0) + mean(am$b1) * x
+dic(ll1, dnorm(y, mu_hat, mean(am$sigma), log = TRUE))
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Vehtari, Gelman & Gabry (2017): LOO e WAIC](https://doi.org/10.1007/s11222-016-9696-4) · [Pacote loo](https://mc-stan.org/loo/) · [Spiegelhalter et al. (2002): DIC](https://doi.org/10.1111/1467-9868.00353) · [Kass & Raftery (1995): fator de Bayes](https://doi.org/10.1080/01621459.1995.10476572)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 7 – Comparação bayesiana de modelos](https://drive.google.com/file/d/1vXcrRwK0_qmrtckzOr7PdusQZ3z-hPSA/view) · Códigos: [Módulo VI – Regressão, DIC e fator de Bayes](https://drive.google.com/file/d/1X-lk5_80cNhDkm61Q_AnvNWv8iuMBH2d/view)
+:::
+:::
+
+## 2.10 Testes de hipóteses {#hipoteses}
+
+:::: {.columns}
+::: {.column .texto}
+
+Hipóteses são **regiões do parâmetro**: $H_0: \theta \in \Theta_0$ × $H_1: \theta \in \Theta_1$. A resposta é a **probabilidade a posteriori** de cada uma, e não "rejeita/não rejeita".
+
+- $P(H_1 \mid y)$ = proporção de amostras em $\Theta_1$;
+- **chance a posteriori:** $P(H_1\mid y)/P(H_0\mid y)$;
+- **fator de Bayes:** chance a posteriori ÷ chance a priori (o quanto os dados mudaram a crença);
+- **ROPE** (região de equivalência prática): faixa em que a diferença é desprezível *na prática*, como ±0,02 gol por mil torcedores. Pergunta: $P(\theta \in \text{ROPE} \mid y)$.
+
+::: {.atencao}
+Atenção
+
+- Hipótese pontual ($\theta = 0$ exatamente) tem probabilidade zero com priori contínua: use ROPE ou fator de Bayes com priori mista.
+- O ROPE é uma decisão do pesquisador, tomada **antes** de ver o resultado (e não depois de ver que o Vasco perdeu).
+- A chance de vitória vem da **preditiva**: ela inclui a incerteza dos parâmetros **e** o acaso do jogo ($\sigma$). Por isso é bem menor que $P(\beta_1 > 0 \mid y)$.
+:::
+
+:::
+::: {.column .codigo}
+
+```{r hipoteses}
+#| collapse: true
+b1 <- am$b1
+c("P(b1 > 0 | y)"      = mean(b1 > 0),       # a torcida ajuda?
+  "P(b1 > 0,05 | y)"   = mean(b1 > 0.05),
+  "P(|b1| < 0,02 | y)" = mean(abs(b1) < 0.02))  # ROPE
+
+# fator de Bayes, H1: b1 > 0 contra H0: b1 <= 0
+p_pri  <- 1 - pnorm(0, 0, 0.5)      # P(H1) pela priori = 0,5
+p_post <- mean(b1 > 0)              # P(H1) pela posteriori
+p_post <- min(p_post, 1 - 1 / (2 * length(b1)))  # evita /0
+(p_post / (1 - p_post)) / (p_pri / (1 - p_pri))   # FB
+
+# A pergunta do torcedor: chance de vencer com 20 mil?
+y_novo <- rnorm(length(b1), am$b0 + am$b1 * 20, am$sigma)
+c(vitoria = mean(y_novo >= 0.5),          # saldo arredondado >= 1
+  empate  = mean(abs(y_novo) < 0.5),
+  derrota = mean(y_novo <= -0.5))
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [Kruschke (2018): ROPE e HDI](https://doi.org/10.1177/2515245918771304)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 8 – Testes de hipóteses](https://drive.google.com/file/d/1NKJniw-0VT7hcXu46Td6p_Z0sv8OHNwR/view) · Códigos: [Módulo VII – Beta-Bernoulli e fator de Bayes](https://drive.google.com/file/d/1kJyZBJ0N_j0VJuEWp5SsAjKs6ndbsHQ9/view)
+:::
+:::
+
+## 2.11 Sensibilidade e modelos hierárquicos {#sensibilidade}
+
+:::: {.columns}
+::: {.column .texto}
+
+**Sensibilidade:** refaça a análise com outra priori razoável. Se a conclusão muda, diga isso; se não muda, a conclusão é robusta. Com muitos dados, a verossimilhança domina; com poucos, a priori pesa.
+
+Ao lado, três prioris para $\beta_1$: a neutra do modelo, uma **de torcedor** (cada mil torcedores valem +0,3 gol, com muita certeza) e uma **de rival** (a torcida atrapalha, −0,1). Prioris muito confiantes e erradas puxam a posteriori mesmo com 60 jogos.
+
+**Modelos hierárquicos:** quando há grupos (escolas, famílias, ambientes), os efeitos dos grupos vêm de uma distribuição comum, cuja variância também é estimada:
+
+$$
+\gamma_j \sim N(0, \tau^2),\qquad \tau \sim \text{half-Normal}(0, s)
+$$
+
+Ex.: o efeito de cada adversário no saldo do Vasco. Isso gera o **partial pooling**: adversário que o Vasco enfrentou poucas vezes é "puxado" para a média geral, por um fator $\tau^2/(\tau^2 + \sigma^2/n_j)$. Fica entre estimar cada grupo isolado (*no pooling*) e ignorar os grupos (*complete pooling*).
+
+::: {.atencao}
+Atenção
+
+- Restrição de identificabilidade: em $y = \mu + \tau_i + e$, some uma constante a $\mu$ e tire dos $\tau_i$, e o ajuste é o mesmo. Use $\sum \tau_i = 0$ ou uma priori centrada em zero.
+- Com $\tau$ perto de zero aparece o "funil" (divergências): use a forma **não centrada**, $\gamma_j = \tau z_j$, $z_j \sim N(0,1)$.
+:::
+
+:::
+::: {.column .codigo}
+
+```{r sensibilidade}
+#| fig-height: 2.6
+#| collapse: true
+# mesma análise, trocando só a priori de b1
+refit <- function(priori) {
+  codigo <- sub("b1    ~ normal(0, 0.5);", priori,
+                modelo_reg@model_code, fixed = TRUE)
+  f <- sampling(stan_model(model_code = codigo), data = dados,
+                seed = 2026, refresh = 0)
+  rstan::extract(f)$b1
+}
+b1_torcedor <- refit("b1 ~ normal(0.3, 0.05);")
+b1_rival    <- refit("b1 ~ normal(-0.1, 0.05);")
+sapply(list(neutra = am$b1, torcedor = b1_torcedor,
+            rival = b1_rival), mean)
+
+d <- rbind(data.frame(b1 = am$b1,        priori = "neutra N(0; 0,5)"),
+           data.frame(b1 = b1_torcedor,  priori = "torcedor N(0,3; 0,05)"),
+           data.frame(b1 = b1_rival,     priori = "rival N(-0,1; 0,05)"))
+ggplot(d, aes(b1, fill = priori)) + geom_density(alpha = .5) +
+  geom_vline(xintercept = 0.12, linetype = 2) +
+  labs(fill = "priori de b1", x = "b1 (gols por mil torcedores)")
+```
+
+A priori neutra acerta perto do valor verdadeiro (tracejado). As prioris confiantes "ganham a discussão" contra 60 jogos e puxam a posteriori para o seu lado. **Lição:** priori informativa precisa de justificativa (dados anteriores, literatura), não de paixão.
+
+```{stan output.var = "esqueleto_hierarquico", eval = FALSE}
+// esqueleto: efeito de cada adversário (grupo), não centrado
+parameters {
+  real mu; vector[J] z;
+  real<lower=0> tau; real<lower=0> sigma;
+}
+transformed parameters { vector[J] gamma = tau * z; }
+model {
+  z ~ std_normal();                  // gamma ~ N(0, tau^2)
+  tau ~ normal(0, 1); sigma ~ normal(0, 2);
+  y ~ normal(mu + gamma[adversario], sigma);
+}
+```
+
+:::
+::::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [BDA3, cap. 5 (modelos hierárquicos)](https://sites.stat.columbia.edu/gelman/book/BDA3.pdf) · [Bayes Rules!, caps. 15–19](https://www.bayesrulesbook.com/)
+
+::: {.content-hidden when-meta="site"}
+- Aula: [Tópico 9 – Avaliação e extensões (hierárquicos, partial pooling)](https://drive.google.com/file/d/1CjiIYuMoV3VE4JcJXMP0oE8bg8VZT-K9/view) · Códigos: [Módulo VII – efeito da priori e do tamanho amostral](https://drive.google.com/file/d/1kJyZBJ0N_j0VJuEWp5SsAjKs6ndbsHQ9/view)
+:::
+:::
+
+# 3. Tabela de distribuições {#sec-dist}
+
+Notação e parametrização do BDA3 (apêndice A), com o que muda no R e no Stan. Digite para filtrar (ex.: "gama", "conjugada", "desvio").
+
+<input id="busca" type="search" placeholder="Filtrar distribuições…" aria-label="Filtrar distribuições">
+
+::: {.atencao}
+As três armadilhas de parametrização
+
+- **Normal:** o livro usa a **variância** $\sigma^2$; R (`dnorm(x, mean, sd)`) e Stan (`normal(mu, sigma)`) usam o **desvio-padrão**; o JAGS (`dnorm(mu, tau)`) usa a **precisão** $1/\sigma^2$.
+- **Gama:** o livro usa $\beta$ = **taxa** (inverso da escala). R: `dgamma(x, shape, rate)` (cuidado: `dgamma(x, a, b)` posicional é a taxa, mas `scale = 1/b` também é aceito). Stan: `gamma(alpha, beta)`, taxa.
+- **Binomial negativa:** há várias. A do livro coincide com `neg_binomial(alpha, beta)` do Stan; no R, `dnbinom(x, size = alpha, prob = beta/(beta+1))` ou `mu = alpha/beta`.
+:::
+
+::: {.tab-dist}
+### Contínuas
+
+| Distribuição | Densidade | Média · Variância · Moda | R | Stan | Uso típico / cuidado |
+|---|---|---|---|---|---|
+| Uniforme $U(a,b)$ | $\frac{1}{b-a}$, $\theta\in[a,b]$ | $\frac{a+b}{2}$ · $\frac{(b-a)^2}{12}$ · — | `dunif(x, a, b)` | `uniform(a, b)` | priori "plana" com limites; no Stan, declare os limites no parâmetro. $U(0,1)=\text{Beta}(1,1)$ |
+| Normal $N(\mu,\sigma^2)$ | $\frac{1}{\sqrt{2\pi}\sigma}e^{-\frac{(\theta-\mu)^2}{2\sigma^2}}$ | $\mu$ · $\sigma^2$ · $\mu$ | `dnorm(x, mu, sd)` | `normal(mu, sigma)` | verossimilhança de dados contínuos; priori de médias e efeitos. **R/Stan: desvio-padrão** |
+| Half-Normal | $\frac{2}{\sqrt{2\pi}\sigma}e^{-\frac{\theta^2}{2\sigma^2}}$, $\theta\ge0$ | $\sigma\sqrt{2/\pi}$ · $\sigma^2(1-\frac{2}{\pi})$ · 0 | `2*dnorm(x, 0, s)` | `real<lower=0>` + `normal(0, s)` | **priori de desvio-padrão** (padrão fracamente informativo) |
+| Lognormal | $\frac{1}{\theta\sigma\sqrt{2\pi}}e^{-\frac{(\log\theta-\mu)^2}{2\sigma^2}}$ | $e^{\mu+\sigma^2/2}$ · $(e^{\sigma^2}-1)e^{2\mu+\sigma^2}$ · $e^{\mu-\sigma^2}$ | `dlnorm(x, meanlog, sdlog)` | `lognormal(mu, sigma)` | dados positivos e assimétricos; $\mu,\sigma$ estão na escala do log |
+| Gama $\text{Gama}(\alpha,\beta)$ | $\frac{\beta^\alpha}{\Gamma(\alpha)}\theta^{\alpha-1}e^{-\beta\theta}$ | $\frac{\alpha}{\beta}$ · $\frac{\alpha}{\beta^2}$ · $\frac{\alpha-1}{\beta}$ ($\alpha\ge1$) | `dgamma(x, shape, rate)` | `gamma(alpha, beta)` | **conjugada da Poisson**; priori de precisão (JAGS); com $\alpha>1$, afasta desvios-padrão do zero |
+| Exponencial $\text{Expon}(\beta)$ | $\beta e^{-\beta\theta}$ | $\frac1\beta$ · $\frac{1}{\beta^2}$ · 0 | `dexp(x, rate)` | `exponential(beta)` | $=\text{Gama}(1,\beta)$; priori de desvio-padrão; tempos de espera |
+| Qui-quadrado $\chi^2_\nu$ | $\frac{2^{-\nu/2}}{\Gamma(\nu/2)}\theta^{\nu/2-1}e^{-\theta/2}$ | $\nu$ · $2\nu$ · $\nu-2$ ($\nu\ge2$) | `dchisq(x, df)` | `chi_square(nu)` | $=\text{Gama}(\nu/2,\,1/2)$ |
+| Inv-Gama $\text{Inv-gama}(\alpha,\beta)$ | $\frac{\beta^\alpha}{\Gamma(\alpha)}\theta^{-(\alpha+1)}e^{-\beta/\theta}$ | $\frac{\beta}{\alpha-1}$ ($\alpha>1$) · $\frac{\beta^2}{(\alpha-1)^2(\alpha-2)}$ ($\alpha>2$) · $\frac{\beta}{\alpha+1}$ | não há no base: `1/rgamma(n, a, rate = b)` | `inv_gamma(alpha, beta)` | **conjugada da variância da Normal**; evite $\text{Inv-gama}(\varepsilon,\varepsilon)$ em hierárquicos (Gelman, 2006) |
+| Inv-$\chi^2$ $\text{Inv-}\chi^2_\nu$ | $\frac{2^{-\nu/2}}{\Gamma(\nu/2)}\theta^{-(\nu/2+1)}e^{-1/(2\theta)}$ | $\frac{1}{\nu-2}$ ($\nu>2$) · $\frac{2}{(\nu-2)^2(\nu-4)}$ ($\nu>4$) · $\frac{1}{\nu+2}$ | não há no base | `inv_chi_square(nu)` | $=\text{Inv-gama}(\nu/2,\,1/2)$ |
+| Inv-$\chi^2$ escalonada $\text{Inv-}\chi^2(\nu,s^2)$ | $\frac{(\nu/2)^{\nu/2}}{\Gamma(\nu/2)}s^\nu\theta^{-(\nu/2+1)}e^{-\nu s^2/(2\theta)}$ | $\frac{\nu s^2}{\nu-2}$ · $\frac{2\nu^2s^4}{(\nu-2)^2(\nu-4)}$ · $\frac{\nu s^2}{\nu+2}$ | não há no base | `scaled_inv_chi_square(nu, s)` | $=\text{Inv-gama}(\nu/2,\,\nu s^2/2)$; priori de variância "como $\nu$ observações com variância $s^2$" |
+| *t* de Student $t_\nu(\mu,\sigma^2)$ | $\frac{\Gamma(\frac{\nu+1}{2})}{\Gamma(\frac\nu2)\sqrt{\nu\pi}\sigma}\Big(1+\frac1\nu\big(\frac{\theta-\mu}{\sigma}\big)^2\Big)^{-\frac{\nu+1}{2}}$ | $\mu$ ($\nu>1$) · $\frac{\nu}{\nu-2}\sigma^2$ ($\nu>2$) · $\mu$ | `dt((x-mu)/s, df)/s` | `student_t(nu, mu, sigma)` | verossimilhança **robusta** a valores extremos; half-*t* para desvios-padrão |
+| Cauchy $=t_1(\mu,\sigma^2)$ | $\frac{1}{\pi\sigma\left[1+\left(\frac{\theta-\mu}{\sigma}\right)^2\right]}$ | não existem · não existe · $\mu$ | `dcauchy(x, loc, scale)` | `cauchy(mu, sigma)` | caudas muito pesadas |
+| Half-Cauchy | $\frac{2}{\pi\sigma\left[1+(\theta/\sigma)^2\right]}$, $\theta\ge0$ | não existem · — · 0 | `2*dcauchy(x, 0, s)` | `real<lower=0>` + `cauchy(0, s)` | priori de desvio-padrão em hierárquicos (Gelman, 2006); cauda pesada pode travar cadeias com poucos grupos |
+| Beta $\text{Beta}(\alpha,\beta)$ | $\frac{\Gamma(\alpha+\beta)}{\Gamma(\alpha)\Gamma(\beta)}\theta^{\alpha-1}(1-\theta)^{\beta-1}$ | $\frac{\alpha}{\alpha+\beta}$ · $\frac{\alpha\beta}{(\alpha+\beta)^2(\alpha+\beta+1)}$ · $\frac{\alpha-1}{\alpha+\beta-2}$ | `dbeta(x, a, b)` | `beta(alpha, beta)` | **conjugada da Binomial/Bernoulli**; $\alpha,\beta$ = "sucessos e fracassos a priori" |
+
+### Discretas
+
+| Distribuição | Função de probabilidade | Média · Variância · Moda | R | Stan | Uso típico / cuidado |
+|---|---|---|---|---|---|
+| Bernoulli $\text{Bern}(p)$ | $p^\theta(1-p)^{1-\theta}$, $\theta\in\{0,1\}$ | $p$ · $p(1-p)$ · — | `dbinom(x, 1, p)` | `bernoulli(p)` | dado 0/1; com preditores: `bernoulli_logit` |
+| Binomial $\text{Bin}(n,p)$ | $\binom{n}{\theta}p^\theta(1-p)^{n-\theta}$ | $np$ · $np(1-p)$ · $\lfloor(n+1)p\rfloor$ | `dbinom(x, n, p)` | `binomial(n, p)` | nº de sucessos em $n$ tentativas; conjugada: **Beta** |
+| Poisson $\text{Poisson}(\lambda)$ | $\frac{\lambda^\theta e^{-\lambda}}{\theta!}$ | $\lambda$ · $\lambda$ · $\lfloor\lambda\rfloor$ | `dpois(x, lambda)` | `poisson(lambda)` | contagens; média = variância (se variância > média: sobredispersão → Binomial negativa); conjugada: **Gama** |
+| Binomial negativa $\text{Neg-bin}(\alpha,\beta)$ | $\binom{\theta+\alpha-1}{\alpha-1}\left(\frac{\beta}{\beta+1}\right)^{\alpha}\left(\frac{1}{\beta+1}\right)^{\theta}$ | $\frac{\alpha}{\beta}$ · $\frac{\alpha(\beta+1)}{\beta^2}$ · — | `dnbinom(x, size = a, prob = b/(b+1))` | `neg_binomial(alpha, beta)` ou `neg_binomial_2(mu, phi)` | **contagens com sobredispersão**; = mistura Poisson–Gama. Várias parametrizações! |
+| Geométrica $\text{Geom}(p)$ | $p(1-p)^\theta$, $\theta=0,1,\dots$ | $\frac{1-p}{p}$ · $\frac{1-p}{p^2}$ · 0 | `dgeom(x, p)` | `neg_binomial(1, p/(1-p))` | nº de fracassos antes do 1º sucesso; caso $\alpha=1$ da Binomial negativa |
+| Beta-binomial $\text{Beta-bin}(n,\alpha,\beta)$ | $\binom{n}{\theta}\frac{B(\theta+\alpha,\;n-\theta+\beta)}{B(\alpha,\beta)}$ | $\frac{n\alpha}{\alpha+\beta}$ · $\frac{n\alpha\beta(\alpha+\beta+n)}{(\alpha+\beta)^2(\alpha+\beta+1)}$ · — | `extraDistr::dbbinom(x, n, a, b)` | `beta_binomial(n, alpha, beta)` | **preditiva a posteriori** do modelo Beta–Binomial; proporções com sobredispersão |
+| Multinomial $\text{Multin}(n;p_1..p_k)$ | $\frac{n!}{\prod_j\theta_j!}\prod_j p_j^{\theta_j}$ | $E=np_j$ · $np_j(1-p_j)$; cov $-np_ip_j$ · — | `dmultinom(x, n, p)` | `multinomial(p)` | contagens em $k$ categorias; conjugada: **Dirichlet** |
+
+### Multivariadas
+
+| Distribuição | Densidade | Média · Variância | R | Stan | Uso típico / cuidado |
+|---|---|---|---|---|---|
+| Normal multivariada $N(\mu,\Sigma)$ | $(2\pi)^{-d/2}\lvert\Sigma\rvert^{-1/2}e^{-\frac12(\theta-\mu)^\top\Sigma^{-1}(\theta-\mu)}$ | $\mu$ · $\Sigma$ | `mvtnorm::dmvnorm(x, mu, Sigma)` | `multi_normal(mu, Sigma)` / `multi_normal_cholesky` | efeitos correlacionados, ex.: valores genéticos $u\sim N(0, K\sigma^2_g)$ com matriz de parentesco $K$ |
+| Dirichlet $\text{Dir}(\alpha_1..\alpha_k)$ | $\frac{\Gamma(\alpha_0)}{\prod_j\Gamma(\alpha_j)}\prod_j\theta_j^{\alpha_j-1}$, $\alpha_0=\sum\alpha_j$ | $\frac{\alpha_j}{\alpha_0}$ · $\frac{\alpha_j(\alpha_0-\alpha_j)}{\alpha_0^2(\alpha_0+1)}$ | não há no base (`gtools::rdirichlet`) | `dirichlet(alpha)` com `simplex[K]` | proporções que somam 1 (ex.: ancestralidade no STRUCTURE); generaliza a Beta |
+| Wishart $W_\nu(S)$ | $\propto\lvert W\rvert^{(\nu-k-1)/2}e^{-\frac12\text{tr}(S^{-1}W)}$ | $\nu S$ | `rWishart(n, nu, S)` | `wishart(nu, S)` | priori de matriz de **precisão** (conjugada) |
+| Inv-Wishart $\text{Inv-W}_\nu(S^{-1})$ | $\propto\lvert W\rvert^{-(\nu+k+1)/2}e^{-\frac12\text{tr}(SW^{-1})}$ | $\frac{S}{\nu-k-1}$ | `MCMCpack::riwish(nu, S)` | `inv_wishart(nu, S)` | priori de matriz de **covariância** (conjugada); acopla variâncias e correlações |
+| LKJ (fora da tabela do livro) | $\propto\det(R)^{\eta-1}$ | — | — | `lkj_corr_cholesky(eta)` | priori moderna para **correlações**; $\eta=1$ uniforme, $\eta>1$ puxa para a identidade. Combine com half-Normal nos desvios-padrão |
+:::
+
+::: {.aprofundar}
+Para aprofundar
+
+- [BDA3, apêndice A](https://sites.stat.columbia.edu/gelman/book/BDA3.pdf) (fonte da notação) · [Referência de funções do Stan](https://mc-stan.org/docs/)
+
+::: {.content-hidden when-meta="site"}
+- Material: [Tabela de distribuições (BDA3, ap. A)](https://drive.google.com/file/d/1jVLKrbZYQUByBkkJm7NjdA-RuEiVyc7y/view) · [Binomial negativa e geométrica](https://drive.google.com/file/d/1MJAWXQ9-Es8aI3fSt_q3_3kSPpeKEVxr/view) · Aula: [Tópico 2 – Variável aleatória](https://drive.google.com/file/d/1AY3xJSWp6AQwy0w3v3ZlY0CviEhbWcTr/view)
+:::
+:::
+
+# 4. Mapa das distribuições
+
+Como as distribuições se ligam. **Role para dar zoom e arraste para mover**; os botões no canto também funcionam. Setas cheias: caso particular, transformação ou limite. Tracejadas: **priori conjugada**. A Normal também é conjugada de si mesma (priori Normal para a média de dados normais).
+
+::: {#mapa}
+<div id="mapa-botoes"><button id="zmais" title="Aproximar">+</button><button id="zmenos" title="Afastar">−</button><button id="zreset" title="Ver tudo">⟲</button></div>
+
+```{mermaid}
+%%{init: {"themeVariables": {"fontSize": "17px"}, "flowchart": {"nodeSpacing": 40, "rankSpacing": 55}}}%%
+flowchart TB
+  classDef disc fill:#fde8d7,stroke:#d9822b,color:#222
+  classDef cont fill:#e3eef8,stroke:#2c7fb8,color:#222
+  classDef mult fill:#e8f3e3,stroke:#4d9a3a,color:#222
+
+  BER[Bernoulli]:::disc -->|"soma de n"| BIN[Binomial]:::disc
+  BIN -->|"n→∞, np=λ"| POI[Poisson]:::disc
+  BIN -->|"k categorias"| MUL[Multinomial]:::disc
+  NB[Binomial negativa]:::disc -->|"α = 1"| GEO[Geométrica]:::disc
+  POI -->|"λ ~ Gama"| NB
+  BIN -->|"p ~ Beta"| BB[Beta-binomial]:::disc
+
+  BETA[Beta]:::cont -.->|"conjugada"| BIN
+  BETA -.->|"conjugada"| BER
+  GAM[Gama]:::cont -.->|"conjugada"| POI
+  DIR[Dirichlet]:::mult -.->|"conjugada"| MUL
+  BETA -->|"k categorias"| DIR
+  UNI["Uniforme(0,1)"]:::cont -->|"= Beta(1,1)"| BETA
+
+  GAM -->|"α = 1"| EXP[Exponencial]:::cont
+  GAM -->|"α=ν/2, β=1/2"| CHI[Qui-quadrado]:::cont
+  GAM -->|"1/θ"| IG[Inv-Gama]:::cont
+  CHI -->|"1/θ"| ICHI["Inv-χ²"]:::cont
+  IG -->|"α=ν/2, β=νs²/2"| SICHI["Inv-χ² escalonada"]:::cont
+  IG -.->|"conjugada (variância)"| NOR[Normal]:::cont
+  T[t de Student]:::cont -->|"ν → ∞"| NOR
+  T -->|"ν = 1"| CAU[Cauchy]:::cont
+  NOR -->|"θ ≥ 0"| HN[Half-Normal]:::cont
+  CAU -->|"θ ≥ 0"| HC[Half-Cauchy]:::cont
+  NOR -->|"exp(θ)"| LN[Lognormal]:::cont
+
+  NOR -->|"vetor"| MVN[Normal multivariada]:::mult
+  WIS[Wishart]:::mult -->|"inversa"| IW[Inv-Wishart]:::mult
+  IW -.->|"conjugada (covariância)"| MVN
+  WIS -.->|"conjugada (precisão)"| MVN
+  LKJ["LKJ (correlações)"]:::mult -->|"+ desvios-padrão"| MVN
+```
+:::
+
+```{=html}
+<script>
+/* Busca na tabela de distribuições ------------------------------------------ */
+(function () {
+  const caixa = document.getElementById('busca');
+  if (!caixa) return;
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  caixa.addEventListener('input', () => {
+    const q = norm(caixa.value.trim());
+    document.querySelectorAll('.tab-dist tbody tr').forEach(tr => {
+      tr.style.display = (!q || norm(tr.textContent).includes(q)) ? '' : 'none';
+    });
+  });
+})();
+
+/* Zoom e arraste no mapa ----------------------------------------------------- */
+(function () {
+  function iniciar(svg) {
+    const caixa = document.getElementById('mapa');
+    const bb = svg.getBBox();
+    const inicial = { x: bb.x - 20, y: bb.y - 20, w: bb.width + 40, h: bb.height + 40 };
+    let v = Object.assign({}, inicial);
+    svg.removeAttribute('height'); svg.removeAttribute('width');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    svg.style.cssText = `width:100%; height:${caixa.clientHeight}px; max-width:none; display:block;`;
+    svg.parentElement.style.height = caixa.clientHeight + 'px';
+    const aplicar = () => svg.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`);
+    aplicar();
+    const zoom = (fator, cx = 0.5, cy = 0.5) => {
+      const nw = v.w * fator, nh = v.h * fator;
+      v.x += (v.w - nw) * cx; v.y += (v.h - nh) * cy; v.w = nw; v.h = nh; aplicar();
+    };
+    caixa.addEventListener('wheel', e => {
+      e.preventDefault();
+      const r = svg.getBoundingClientRect();
+      zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+    }, { passive: false });
+    let arrastando = null;
+    caixa.addEventListener('pointerdown', e => {
+      if (e.target.closest('#mapa-botoes')) return;
+      e.preventDefault();
+      arrastando = { x: e.clientX, y: e.clientY }; caixa.style.cursor = 'grabbing';
+    });
+    window.addEventListener('pointermove', e => {
+      if (!arrastando) return;
+      const r = svg.getBoundingClientRect();
+      const escala = Math.max(v.w / r.width, v.h / r.height);
+      v.x -= (e.clientX - arrastando.x) * escala; v.y -= (e.clientY - arrastando.y) * escala;
+      arrastando = { x: e.clientX, y: e.clientY }; aplicar();
+    });
+    window.addEventListener('pointerup', () => { arrastando = null; caixa.style.cursor = 'grab'; });
+    document.getElementById('zmais').onclick  = () => zoom(1 / 1.3);
+    document.getElementById('zmenos').onclick = () => zoom(1.3);
+    document.getElementById('zreset').onclick = () => { v = Object.assign({}, inicial); aplicar(); };
+  }
+  const espera = setInterval(() => {
+    const svg = document.querySelector('#mapa svg');
+    if (svg && svg.getBBox().width > 0) { clearInterval(espera); iniciar(svg); }
+  }, 300);
+})();
+</script>
+```
+
+# 5. Checklist para a próxima análise
+
+1. **Pergunta e dados:** o que quero saber? Olhei os dados?
+2. **Verossimilhança:** a família combina com o tipo do dado?
+3. **Priori:** justificada; parametrização conferida (DP × variância × precisão); **checagem a priori** feita.
+4. **Ajuste:** 4 cadeias; aquecimento descartado; testei o código com dados simulados?
+5. **Convergência:** $\hat R < 1{,}01$, ESS > 400, MCSE pequeno, traço misturado, **zero divergências**.
+6. **Adequação:** checagem preditiva a posteriori, inclusive em estatísticas que o modelo não ajusta (máximo, mínimo, por grupo).
+7. **Comparação:** LOO/WAIC (ver Pareto $k$) ou DIC; diferença comparada ao erro-padrão.
+8. **Inferência:** média ou mediana + HPD; hipóteses como probabilidades; ROPE definido antes.
+9. **Sensibilidade:** outra priori razoável muda a conclusão?
+10. **Relato:** modelo, priori, software, cadeias × iterações, diagnósticos e limitações.
+
+# Referências
+
+- Gelman, A. et al. (2013). *Bayesian Data Analysis*, 3ª ed. CRC Press. [PDF gratuito](https://sites.stat.columbia.edu/gelman/book/BDA3.pdf).
+- Johnson, A. A.; Ott, M. Q.; Dogucu, M. (2022). *Bayes Rules! An Introduction to Applied Bayesian Modeling*. CRC Press. [Versão online](https://www.bayesrulesbook.com/).
+- Gelman, A. (2006). Prior distributions for variance parameters in hierarchical models. *Bayesian Analysis*, 1(3), 515–534.
+- Spiegelhalter, D. J. et al. (2002). Bayesian measures of model complexity and fit. *JRSS B*, 64(4), 583–639.
+- Vehtari, A.; Gelman, A.; Gabry, J. (2017). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. *Statistics and Computing*, 27, 1413–1432.
+- Vehtari, A. et al. (2021). Rank-normalization, folding, and localization: an improved R-hat. *Bayesian Analysis*, 16(2), 667–718.
+- Gabry, J. et al. (2019). Visualization in Bayesian workflow. *JRSS A*, 182(2), 389–402.
+- Kruschke, J. K. (2018). Rejecting or accepting parameter values in Bayesian estimation. *AMPPS*, 1(2), 270–280.
+- Link, W. A.; Eaton, M. J. (2012). On thinning of chains in MCMC. *Methods in Ecology and Evolution*, 3(1), 112–115.
+- Carpenter, B. et al. (2017). Stan: a probabilistic programming language. *Journal of Statistical Software*, 76(1).
+
+::: {.content-hidden when-meta="site"}
+Material da disciplina: EST613 – Estatística Bayesiana, UFV, 2026/2. Profa. Camila Ferreira Azevedo. Tópicos 1–9 e Módulos I–VII (códigos).
+:::

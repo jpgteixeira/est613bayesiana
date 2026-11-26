@@ -1,0 +1,171 @@
+\documentclass[14pt]{extarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{mathptmx}
+\usepackage[paperwidth=18cm,paperheight=24cm,margin=1cm]{geometry}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\setlength{\parindent}{0pt}
+\setlength{\columnsep}{0.7cm}
+\setlist{itemsep=0.5em,leftmargin=1.2em}
+\pagestyle{empty}
+\newcommand{\sld}[2]{\vspace{0.8em}{\large\color{blue!50!black}\textbf{Slide #1 · #2}}\par\vspace{0.4em}}
+\newcommand{\p}{\textcolor{red!60!black}{\textbf{P:}} }
+\newcommand{\cit}{\textcolor{green!40!black}{\textbf{Cite:}} }
+
+\begin{document}
+
+{\large\bfseries Cola -- apresentação EST613}\\{\small Legenda: \cit = citação a comentar · \p = possível pergunta}
+
+
+\sld{2}{Contexto}
+\begin{itemize}
+\item PAEBES é raro; no dia a dia só há notas, que carregam viés de escola e professor.
+\item \cit Zitzmann (2025): informação prévia viesada não melhora a avaliação.
+\item Ideia: adaptar o modelo à rotina da escola (só notas que já existem).
+\end{itemize}
+
+\clearpage \sld{3}{Pergunta e objetivo}
+\begin{itemize}
+\item Duas partes: classificar melhor (acerto) e detectar mudança de nível (dinâmica).
+\item \p Por que simulado? Para conhecer a verdade e medir acerto. Com dados reais, uso DIC, LOO e PPC.
+\end{itemize}
+
+\clearpage \sld{5}{Dados simulados}
+\begin{itemize}
+\item 120 alunos = 3 entradas (35/55/85) $\times$ 4 trajetórias $\times$ 10; 9 avaliações.
+\item E5 infla +12; professores PR $-10$, PM 0, PF $+8$; prof. de origem conhecido em $\sim$40\%.
+\item Regra dos 60: 60 dos 120 chegam com 60 $\Rightarrow$ ``60 ou menos'' (censura).
+\item O modelo \textbf{não} conhece nada disso.
+\end{itemize}
+
+\clearpage \sld{6}{O modelo em 5 passos}
+\begin{itemize}
+\item $\theta_{it}$: proficiência do aluno $i$ na avaliação $t$ ($t=1$ = início do ano).
+\item M1: priori em $\theta_{i0}\sim N(h_i,100)$; antes da 1ª prova soma $\omega^2=9$ $\Rightarrow$ var. 109.
+\item M1 lê o 60 como ``$\approx$60 $\pm$10''; \textbf{não} trata censura nem viés.
+\item Kalman: média ponderada pelas precisões. Ex.: priori var. 100, prova var. 36 $\Rightarrow$ prova pesa 74\%.
+\item \p Variância ou desvio? $N(\mu,\sigma^2)$: $\sigma_0=10$ (var. 100), $\sigma=6$ (36), $\omega=3$ (9).
+\end{itemize}
+
+\clearpage \sld{7}{M1: valores fixados}
+\begin{itemize}
+\item Valores tirados da simulação: favorece o M1 $\Rightarrow$ comparação conservadora.
+\end{itemize}
+
+\clearpage \sld{8}{Como o modelo funciona}
+\begin{itemize}
+\item Histórico = priori $\to$ cada prova atualiza $\to$ posteriori vira priori da próxima.
+\item \cit Van Moere \& Hanlon (2020): notas anteriores como priori, $>$21 mil alunos, mais precisão.
+\item \cit Kalman (1960): prevê, observa, corrige (como o GPS).
+\item \p M2: histórico entra como dado porque precisa ser corrigido por $\gamma,\delta$; na prática faz papel de priori ($\sim$98\%).
+\end{itemize}
+
+\clearpage \sld{9}{Distribuições e valores (M2)}
+\begin{itemize}
+\item \textbf{1.106 parâmetros}: 1.080 $\theta$ + 5 $\gamma$ + 14 $\delta_p$ + 2 $\delta_a$ livres + 5 DP ($\sigma,\sigma_h,\omega,\tau_{esc},\tau_{prof}$). 1.200 observações.
+\item Funciona porque $\theta$ se liga pela dinâmica e efeitos pela hierarquia.
+\item \cit Gelman (2006): poucos grupos $\Rightarrow$ testar half-Cauchy em $\tau$. Nada mudou.
+\item \p Por que Gama em $\sigma_h$? 1 histórico/aluno, erro confunde com $\delta_p$; half-Normal deixava $\sigma_h\to0$ (funil). Gama(2;0,2) tem densidade 0 no zero. ESS 307 $\to$ 854.
+\item \p Estimativas relativas à média dos 3 (soma zero): real centrado $-9{,}3/0{,}7/8{,}7$.
+\end{itemize}
+
+\clearpage \sld{10}{Verossimilhança}
+\begin{itemize}
+\item $h_i>60$: densidade $\phi$; $h_i=60$: $\Phi$ = prob. de ser $\le60$ (censura).
+\item Prof. de origem desconhecido: efeito integrado, variância $\sigma_h^2+\tau_{prof}^2$ (sem imputação).
+\end{itemize}
+
+\clearpage \sld{11}{O ruído da dinâmica}
+\begin{itemize}
+\item Sem ruído = média simples (9ª prova pesa 11\%); com ruído, 39\%.
+\end{itemize}
+
+\clearpage \sld{12}{Checagem preditiva a priori}
+\begin{itemize}
+\item Escala certa (mediana 50), mas 9\% fora de 0--100: verossimilhança normal não conhece o teto.
+\item \p Por que não corrigiu? Censura em 100 tira a conta exata (Kalman) do LOO por aluno. Fica como próximo passo.
+\end{itemize}
+
+\clearpage \sld{13}{Classificação = teste de hipóteses}
+\begin{itemize}
+\item Cortes 40/60/80; P(nível) = proporção de amostras na faixa ($\theta$ truncado em 0--100).
+\item \cit Dias et al. (2022): mesma lógica da prob. de desempenho superior de cultivares.
+\item Maior prob. reage rápido mas ``pisca''; limiar 0,7 é estável mas detecta mais tarde.
+\end{itemize}
+
+\clearpage \sld{15}{M2: caminho até o modelo final}
+\begin{itemize}
+\item 1: não identificável (somar $c$ em $\theta$ e tirar de $\delta$ = mesmo ajuste) $\Rightarrow$ 9 divergências.
+\item 2: soma zero conserta. 3: Gama em $\sigma_h$ melhora ESS. 4: não centrado evita funil.
+\item Mensagem: R-hat bom não garante resposta certa.
+\end{itemize}
+
+\clearpage \sld{16}{Convergência}
+\begin{itemize}
+\item R-hat $\le$1,01; ESS $>$540; MCSE $\le$0,07; Geweke 5/52 ($\approx$ acaso 2,6).
+\item \p Raftery--Lewis: exige $\ge$3.746 amostras/cadeia; temos 1.000. \p Thin: não, autocorrelação cai rápido.
+\item \p Por que NUTS? $>$1.000 parâmetros correlacionados; Gibbs/Metropolis precisariam de muito mais iterações.
+\end{itemize}
+
+\clearpage \sld{17}{O modelo reproduz os dados?}
+\begin{itemize}
+\item p bayesiano = P($T(y_{rep})\ge T(y)$); bom é perto de 0,5 (não é p-valor).
+\item Máximo $p=1{,}00$: notas acima de 100 (28 de 1.080 censuradas). Mínimo 0,17: aceitável.
+\item Convergir e ser o melhor não garante adequação.
+\end{itemize}
+
+\clearpage \sld{18}{Comparação de modelos}
+\begin{itemize}
+\item \cit Spiegelhalter (2002) DIC; Vehtari (2017) LOO. Nenhum usa a verdade.
+\item ELPD = soma do log da prob. prevista para cada aluno; diferença 41,1 (EP 7,6) $\approx$ 5 EP.
+\item \p LOO por nota descartado: cada nota tem seu $\theta$ $\Rightarrow$ 59/1.200 com Pareto-$k>0{,}7$.
+\item 4 alunos com $k>0{,}7$; sem eles, diferença 45,3 (mantém).
+\item \p Suavizador: filtro estima o fim do ano; suavizador volta até o início para o histórico censurado.
+\end{itemize}
+
+\clearpage \sld{19--20}{Trajetórias / um aluno de cada perfil}
+\begin{itemize}
+\item PF infla: M0 e M1 superestimam; M2 desconta e cola na verdade.
+\item Gangorra: não seguir cada oscilação é desejável.
+\end{itemize}
+
+\clearpage \sld{21}{Desempenho da classificação}
+\begin{itemize}
+\item M2 83\% vs M0 66\% e M1 68\%. Trocas reais: 1,55/aluno.
+\item Limiar: menos trocas (0,36), mais mudanças perdidas (40\%). Escolha prática: mudar nível tem consequência.
+\end{itemize}
+
+\clearpage \sld{22}{O rigor do professor importa}
+\begin{itemize}
+\item PM: todos $\sim$79--85\%. PR e PF: M0/M1 caem a 55--63\%, M2 fica em 79--83\%.
+\item Ganho vem do professor, não da dinâmica (M1 $\approx$ M0).
+\item \cit Zitzmann (2025): priori viesada não ajuda. \cit Kaplan (2023): estimar o quanto confiar no passado.
+\end{itemize}
+
+\clearpage \sld{23}{Efeitos e teste de hipóteses}
+\begin{itemize}
+\item X = verdadeiro, ponto = estimado, barra = HPD 95\%. Todos os X dentro da barra.
+\item Só E5 longe do zero: achou a escola que infla, não inventou efeito nas outras.
+\item Professores com barra mais estreita: 9 notas de muitos alunos vs 1 histórico.
+\item P = 1,00 = todas as 4.000 amostras do lado certo ($>$0,999). PM: ROPE $\pm$2, P = 0,84.
+\end{itemize}
+
+\clearpage \sld{24}{Partial pooling}
+\begin{itemize}
+\item Professor com 1 aluno é puxado para 0 (fator 0,68); com 5, quase nada (0,91).
+\item Analogia: restaurante com 1 avaliação vs 200.
+\item \p Ponto perto de zero que se afastou: razão entre números pequenos é instável; olhar as pontas.
+\end{itemize}
+
+\clearpage \sld{26}{Conclusão}
+\begin{itemize}
+\item Sim: classifica melhor; ganho vem de estimar professor e escola, confirmado por DIC e LOO.
+\item Limitação: censura em 100; uma única réplica simulada.
+\item Futuro: dados da Sedu; histórico 6º--9º ano; PAEBES como régua externa (alerta precoce).
+\item Fecho: ``histórico como priori (Van Moere), atualização (Kalman), correção do viés (Zitzmann)''.
+\end{itemize}
+
+\end{document}

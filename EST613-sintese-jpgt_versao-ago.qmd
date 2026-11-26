@@ -1,0 +1,142 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA - SÍNTESE DE CONTEÚDOS"
+author: "João Paulo Gusmão Teixeira (64316)"
+date: " iniciado em 31/08/2026"
+format: html
+embed-resources: true
+---
+
+```{=html}
+<style>
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+</style>
+```
+
+```{r setup, include=FALSE}
+# Bibliotecas
+
+getwd()
+
+pacotes <- c("tidyverse", "readr", "knitr", "kableExtra")
+
+
+for (p in pacotes) {
+    if (!require(p, character.only = TRUE)) {
+        install.packages(p)
+        library(p, character.only = TRUE)
+    }
+}
+
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center",
+    tidy.opst = list(width.cutoff = 60),
+    tidy = TRUE
+)
+```
+
+# Agosto 
+Em agosto, pudemos iniciar os estudos em Estística Bayesiana.
+
+## 17/08/2026 - Introdução
+Aula introdutória. Ficamos sabendo dos assuntos que serão abordados, a distribuição do rendimento no período e demais informações.
+
+Sem perder tempo, começamos a entender como foi formulado o Teorema de Bayes, sendo seu criado **Thomas Bayes (1702-1761)**, um reverendo e matemático inglês. Uma curiosidade é que sua publicação se deu de maneira póstuma, graças a **Richard Price**. A obra é intitulada “*An Essay towards Solving a Problem in the Doctrine of Chances*”. Philosophical Transactions of the Royal Society (vol. 53, pp. 370–418)."
+
+::: {.callout-note}
+# Diferença entre a frequentista e a bayesiana
+Uma primeira questão que ficou bem esclarecida é que na estatística bayesiana o conhecimento sobre determinado evento não é ignorado, e sim incorporado à estatítica que está sendo construida. Daí estende o conceito de **probabilidade subjetiva** 
+
+:::
+
+:::: {.columns}
+
+::: {.column width="48%"}
+#### Probabilidade objetiva
+* **Definição de Probabilidade:** é baseada em um mecanismo aleatório conhecido.
+* **Exemplos:**
+    * lançamento de dados
+    * retirada de uma carta de um baralho
+    * Sorteio de Mega-Sena
+:::
+
+::: {.column width="2%"}
+<!-- Espaçador -->
+:::
+
+::: {.column width="48%"}
+#### Probabilidade subjetiva
+* **Definição de Probabilidade:** baseada em crença ou sobre um evento
+* **Exemplos:**
+    * Qual a chance de chover amanhã?
+    * Qual a chance de um investimento valorizar?
+    * Qual a chance do Vasco vencer?
+    * Qual a chance de o Vasco vencer, dado que ele vai jogar contra o time x?
+
+:::
+
+::::
+
+Outra ideia que ficou clara nesse momento inicial diz respeito ao **Princípio da razão insuficiente**. Eu o entendi como o **Princípio da Ignorância**. Ou seja, se não tem muita informação sobre algo pra mostrar que tal situação é mais provável que outra, fazemos por bem considerar que todas elas são igualmente prováveis.
+
+::: {.callout-note}
+# Princípio da razão insuficiente (da indiferença)
+
+Quando **não há evidências** ou informações que indiquem que um resultado é mais provável que outro, consideramos todos os resultados **igualmente prováveis**.
+
+
+:::
+
+Dadas essas questões, é necessário entender sobre distribuições de probabilidade, que são usadas quando o obejtivo do estudo não é um evento determinístico ($V = \frac{\Delta S}{\Delta T} $, por exemplo). Ou seja, quando há evento probabilístico ou aleatório. Neste, mesmo quando se conhece todas as condições, não existe certeza sobre o resultado, portanto é analisado o comportamento probabilístico dos possíveis resultados.
+
+::::::{.columns}
+
+:::::{.column width="50%"}
+#### Conjuntos finitos e infinitos
+::::{.columns}
+:::{.column width="50%"}
+##### Finitos
+* É aquele cuja a cardinalidad pode ser representada por um númerop inteiro
+* $A {boneco daquele incone}$ $|A| = 5$
+* 
+:::
+
+:::{.column width="50%"}
+##### Infinitos
+- 1
+- 2
+- 3
+:::
+::::
+
+:::::
+
+:::::{.column width="50%"}
+#### Conjuntos Enumeráveis e não-enumeráveis
+
+::::{.columns}
+:::{.column width="50%"}
+##### Enumeráveis
+- 1
+
+:::
+
+:::{.column width="50%"}
+##### Não-enumeráveis
+- 1 
+:::
+::::
+
+:::::
+::::::
+
+
+
+
+
+

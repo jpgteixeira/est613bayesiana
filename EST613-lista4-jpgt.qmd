@@ -1,0 +1,251 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA <br> LISTA DE EXERCÍCIOS 04"
+author: "João Paulo Gusmão Teixeira (64316)"
+format:
+  html:
+    toc: true
+    embed-resources: true
+---
+
+```{=html}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+
+.resposta {
+  font-family: 'Architects Daughter', cursive;
+  font-size: 1.2rem;
+}
+
+.diagcell {
+  background: linear-gradient(to top right, transparent calc(50% - 1px), #dee2e6 calc(50% - 1px), #dee2e6 calc(50% + 1px), transparent calc(50% + 1px));
+  position: relative;
+  min-width: 100px;
+  height: 50px;
+}
+.diag-bottom {
+  position: absolute;
+  bottom: 2px;
+  left: 5px;
+}
+.diag-top {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+}
+
+</style>
+```
+
+
+## Resoluções Manuscritas (Questões 1 a 10)
+
+Professora, achei melhor entregar a lista como um arquivo único, então abaixo tem toda a resolução manual. Ao final, tem a resolução do exercício 11, em R.
+
+```{=html}
+<embed src="2026.2_EST613_EXERCICIO-LISTA04.pdf" type="application/pdf" width="100%" height="800px" />
+```
+
+---
+
+::: {.pergunta}
+## Questão 11
+Considere a seguinte estrutura de análise bayesiana:
+
+$$Y \sim \text{Gama}(a,b) \quad b \sim \text{Gama}(\alpha,\beta) \quad b \mid y \sim \text{Gama}(an + \alpha, \sum_{i=1}^n y_i+ \beta)$$
+
+em que $a = 0,01$; $\alpha = 2$; $\beta = 0,5$; $n = 50$ e $\sum_{i=1}^n y_i = 1,5$. Utilizando a função *quantile* do pacote *stats* e a função *hdi* do pacote *HDInterval*, responda:
+
+a) Obtenha o intervalo de credibilidade para $b$ considerando 90% de probabilidade;
+b) Obtenha o HPD para $b$ considerando 90% de probabilidade
+c) Os intervalos obtidos no item a) e b) são iguais? Justifique.
+:::
+
+::: {.resposta}
+
+### Chegando aos hiperparâmetros
+
+- $Y \sim \text{Gama}(a,b)$
+
+- $b \sim \text{Gama}(\alpha,\beta)$
+
+- $b \mid y \sim \text{Gama}(an + \alpha, \sum_{i=1}^n y_i+ \beta)$
+
+Temos que:
+
+$$\alpha^* = an+\alpha$$
+
+$$\beta^* = \sum_i^n y_i + \beta$$
+
+O exercício informa que:
+
+- $a = 0,01$
+
+- $\alpha = 2$
+
+- $\beta = 0,5$
+
+- $n = 50$
+
+- $\sum_{i=1}^n y_i = 1,5$
+
+#### Para $\alpha^*$
+
+$$\alpha^* = an + \alpha = (0,01 \times 50) + 2$$
+
+$$\alpha^* = 0,5 + 2 = \mathbf{2,5}$$
+
+#### Para $\beta^*$
+
+$$\beta^* = \sum_{i=1}^n y_i + \beta = 1,5 + 0,5 = \mathbf{2,0}$$
+
+Então, chegamos à distribuição a posteriori sendo:
+
+$$b \mid y \sim \text{Gama}(2,5 \; , \; 2)$$
+
+Com isso, podemos prosseguir nos cálculos dentro do R. Instalei os pacotes fora do ambiente qmd.
+
+```{r}
+#| message: false
+#| warning: false
+
+# Carregando os pacotes necessários
+library(HDInterval)
+library(stats)
+
+# Hiperparâmetros da posteriori
+alfa_post <- 2.5
+beta_post  <- 2.0
+
+# Considerando 90% de probabilidade
+prob_ic  <- 0.90
+alfa_ic <- 1 - prob_ic
+
+# definindo a semente aleatória
+set.seed(50)
+n_simulacao <- 1e6
+b_post <- rgamma(n_simulacao, shape = alfa_post, rate = beta_post)
+
+```
+
+### a) Intervalo de Credibilidade de Caudas Iguais (90%)
+
+```{r}
+# IC90
+# Quantis
+
+q_inf <- as.numeric(stats::quantile(b_post, probs = alfa_ic / 2))
+q_sup <- as.numeric(stats::quantile(b_post, probs = 1 - (alfa_ic / 2)))
+
+# IC em si
+IC90 <- cbind(limite_inferior = q_inf, limite_superior = q_sup)
+
+# resposta mais limpa
+respostaIC <- paste0(
+    "Intervalo de credibilidade de 90%: [",
+    round(q_inf, 4), "; ", round(q_sup, 4), "]\n"
+    )
+
+cat(respostaIC)
+```
+
+### b) Intervalo HPD (90%)
+
+```{r}
+# HPD90
+
+# Densidade - usar HDInterval
+dens <- density(b_post, from = 0, n = 4096)
+
+# Obtenção do intervalo HPD
+HPD_regiao <- HDInterval::hdi(dens, credMass = prob_ic, allowSplit = TRUE)
+
+respostaHPD <- paste0(
+    "HPD 90%: [",
+    round(HPD_regiao[1, "begin"], 3), "; ",
+    round(HPD_regiao[1, "end"], 3), "]\n"
+    )
+
+cat(respostaHPD)
+
+```
+
+### c) Comparação dos intervalos
+
+```{r}
+# Comparação das amplitudes
+comp_IC <- as.numeric(q_sup - q_inf)
+comp_hpd  <- as.numeric(HPD_regiao[2] - HPD_regiao[1])
+
+tabela_comp <- data.frame(
+  Metodo = c("Caudas Iguais (quantile)", "HPD (HDInterval)"),
+  Limite_Inferior = c(q_inf, HPD_regiao[1]),
+  Limite_Superior = c(q_sup, HPD_regiao[2]),
+  Comprimento = c(comp_IC, comp_hpd)
+)
+print(tabela_comp)
+```
+
+Como observado, os intervalos não são iguais. O intervalo de credibilidade divide a incerteza por dois e pega os extremos. Caso a distribuição não seja simétrica, a distribuição da incerteza não será "pega" de maneira correta. Esse é o caso da distribuição Gama, que concentra valores à esquerda (é assimétrica à direita). Já o HPD seleciona a região que tenha maior densidade a posteriori, sendo então de menor comprimento que o intervalo de credibilidade.
+
+Pedi ao Gemini para replicar os gráficos que há no material de estudo para ficar mais interessante a apresentação do resultado.
+
+```{r}
+#| fig-width: 10
+#| fig-height: 5
+
+# Grid para curva teórica
+x_seq <- seq(0, max(b_post[1:10000]), length.out = 1000)
+y_val <- dgamma(x_seq, shape = alfa_post, rate = beta_post)
+
+par(mfrow = c(1, 2), mar = c(4.5, 4.5, 3, 1))
+
+# GRÁFICO 1: Intervalo de Caudas Iguais
+plot(
+  x_seq, y_val, type = "l", col = "violet", lwd = 2,
+  xlab = expression(b), ylab = "Densidade a posteriori",
+  main = "Intervalo de Credibilidade de 90%",
+  xlim = c(0, 3.5), ylim = c(0, max(y_val) * 1.05)
+)
+
+ind_cred <- (x_seq >= q_inf & x_seq <= q_sup)
+polygon(
+  c(q_inf, x_seq[ind_cred], q_sup),
+  c(0, y_val[ind_cred], 0),
+  col = adjustcolor("pink", alpha.f = 0.7), border = NA
+)
+lines(x_seq, y_val, col = "violet", lwd = 2)
+abline(v = c(q_inf, q_sup), col = "gray50", lty = 3, lwd = 1.5)
+
+# GRÁFICO 2: Região HPD
+plot(
+  x_seq, y_val, type = "l", col = "violet", lwd = 2,
+  xlab = expression(b), ylab = "Densidade a posteriori",
+  main = "Região HPD de 90%",
+  xlim = c(0, 3.5), ylim = c(0, max(y_val) * 1.05)
+)
+
+inf_hpd <- HPD_regiao[1, "begin"]
+sup_hpd <- HPD_regiao[1, "end"]
+ind_hpd <- (x_seq >= inf_hpd & x_seq <= sup_hpd)
+
+polygon(
+  c(inf_hpd, x_seq[ind_hpd], sup_hpd),
+  c(0, y_val[ind_hpd], 0),
+  col = adjustcolor("pink", alpha.f = 0.7), border = NA
+)
+lines(x_seq, y_val, col = "violet", lwd = 2)
+abline(v = c(inf_hpd, sup_hpd), col = "gray50", lty = 3, lwd = 1.5)
+
+# Nível de corte horizontal do HPD
+altura_corte <- attr(HPD_regiao, "height")
+abline(h = altura_corte, col = "blue", lty = 2, lwd = 1.5)
+
+par(mfrow = c(1, 1))
+```
+
+:::

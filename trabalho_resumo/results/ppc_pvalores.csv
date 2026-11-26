@@ -1,0 +1,8 @@
+"nivel","estatistica","p_bayesiano"
+"global","média",0.47
+"global","desvio-padrão",0.56
+"global","mínimo",0.165
+"global","máximo",1
+"individual","média dos DPs por aluno",0.595
+"grupo (professor)","maior diferença entre médias dos professores",0.445
+"grupo (escola)","maior diferença entre médias do histórico por escola",0.66

@@ -1,0 +1,1049 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA <br> LISTA DE EXERCÍCIOS 07"
+author: "João Paulo Gusmão Teixeira (64316)"
+format:
+  html:
+    toc: true
+    code-overflow: wrap
+    embed-resources: true
+---
+
+```{=html}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+
+.resposta {
+  font-family: 'Architects Daughter', cursive;
+  font-size: 1.2rem;
+}
+</style>
+```
+
+```{r setup, include=FALSE}
+# Pacotes utilizados ao longo da lista (instalados fora do ambiente qmd)
+library(rjags)
+library(coda)
+library(knitr)
+
+# Formatação de números no texto (separador de milhar e vírgula decimal)
+fmt <- function(x, d = 2) format(round(x, d), big.mark = ".", decimal.mark = ",", scientific = FALSE, nsmall = d)
+
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center"
+)
+```
+
+::: {.pergunta}
+
+- Resolva no R. Nos exercícios 3 a 5 use JAGS (rjags/coda) ou outro software com 3 cadeias, burn-in de 5.000 e 20.000 iterações.
+- Verifique a convergência (traceplot, Gelman-Rubin nos parâmetros estocásticos principais, tamanho efetivo).
+- Use a escala de $\log_{10}(B_{01})$ vista em aula para interpretar o Fator de Bayes.
+:::
+
+Vou trazer a tabela para cá, pra ficar mais completa a resolução.
+
+**Escala de interpretação do Fator de Bayes** (a favor de $H_0$):
+
+| $\log_{10}(B_{01})$ | $B_{01}$ | Evidência a favor de $H_0$ |
+|:---:|:---:|:---|
+| 0 a 1/2 | 1 a 3,2 | Inconclusiva |
+| 1/2 a 1 | 3,2 a 10 | Positiva |
+| 1 a 2 | 10 a 100 | Forte |
+| > 2 | > 100 | Muito forte |
+
+Quando $B_{01} < 1$, a evidência é a favor de $H_1$. A mesma escala é aplicada para $B_{10} = 1/B_{01}$. Há ainda a comparação pelo valor absoluto de $\log_{10}(B_{01})$.
+
+::: {.resposta}
+
+### Configurações iniciais
+
+Vamos começar salvando na memória o que o exercício pede.
+
+
+
+```{r configuracoes jags}
+# Configurações comuns às questões 3 a 5
+n_cadeias <- 3
+n_burnin  <- 5000
+n_iter    <- 20000
+
+# Semente do gerador do JAGS em cada cadeia
+# Usei função rng(0) é a semente 2026, a rng(1) é a semente 2027 ...
+rng <- function(k) list(.RNG.name = "base::Mersenne-Twister", .RNG.seed = 2026 + k)
+```
+
+:::
+
+---
+
+::: {.pergunta}
+1. Em um lote de sementes, 40 foram avaliadas e 14 germinaram. Considere $Y_i \mid p \sim \text{Bernoulli}(p)$ e $p \sim \text{Beta}(a, b)$. Deseja-se testar
+
+$$H_0: p \le 0,25 \quad \text{versus} \quad H_1: p > 0,25$$
+
+a. Obtenha a distribuição a posteriori de $p$ para uma priori $\text{Beta}(a, b)$ genérica.
+
+b. Para as prioris Beta(1, 1), Beta(2, 8) e Beta(20, 20), calcule $P(H_0)$, $P(H_0 \mid y)$, as odds a priori e a posteriori e o Fator de Bayes $B_{01}$.
+
+c. Interprete $\log_{10}(B_{01})$ em cada caso pela escala vista em aula.
+
+d. Com a priori Beta(20, 20), $P(H_0)$ e $P(H_0 \mid y)$ são ambas muito pequenas, mas $B_{01} \approx 1$. Explique por que as duas abordagens contam histórias diferentes.
+
+e. Fixando a priori Beta(1, 1) e mantendo a proporção observada (35%), recalcule $B_{01}$ para $n = 20$ (7 germinadas) e $n = 200$ (70 germinadas). O que acontece com a evidência?
+:::
+
+## Resposta 01
+
+### Resposta 01.a) Distribuição a posteriori
+
+::: {.resposta}
+Com $n = 40$ e $\sum y_i = 14$, a verossimilhança Bernoulli é
+
+$$f(y \mid p) = \prod_{i=1}^{n} p^{y_i}(1 - p)^{1 - y_i} = p^{\sum y_i}(1 - p)^{n - \sum y_i}$$
+
+e a priori $\text{Beta}(a, b)$ é $\pi(p) \propto p^{a - 1}(1 - p)^{b - 1}$. Pelo teorema de Bayes:
+
+$$\pi(p \mid y) \propto f(y \mid p)\,\pi(p) \propto p^{\left(a + \sum y_i\right) - 1}(1 - p)^{\left(b + n - \sum y_i\right) - 1}$$
+
+que é o núcleo de uma Beta. Portanto,
+
+$$p \mid y \sim \text{Beta}\left(a + \sum_{i=1}^{n} y_i,\; b + n - \sum_{i=1}^{n} y_i\right) = \text{Beta}(a + 14,\; b + 26)$$
+:::
+
+### Resposta 01.b) Probabilidades, odds e Fator de Bayes
+
+::: {.resposta}
+As probabilidades das hipóteses são áreas sob a priori e sob a posteriori:
+
+$$P(H_0) = P(p \le 0,25) = \int_0^{0,25} \pi(p)\,dp, \qquad P(H_0 \mid y) = P(p \le 0,25 \mid y) = \int_0^{0,25} \pi(p \mid y)\,dp$$
+
+com $P(H_1) = 1 - P(H_0)$ e $P(H_1 \mid y) = 1 - P(H_0 \mid y)$. O Fator de Bayes é a razão entre as odds a posteriori e as odds a priori:
+
+$$B_{01} = \frac{P(H_0 \mid y) / P(H_1 \mid y)}{P(H_0) / P(H_1)}$$
+
+As integrais são as funções de distribuição da Beta, calculadas com `pbeta`. Seguindo a função do material, o Fator de Bayes é calculado na escala logarítmica, para evitar problemas numéricos quando as probabilidades são muito pequenas.
+:::
+
+```{r Resposta 1b}
+#| collapse: true
+#| comment: ""
+
+analise_beta <- function(soma_y, n, a, b, p0 = 0.25) {
+    a_star <- a + soma_y
+    b_star <- b + n - soma_y
+
+    # Probabilidades a priori e a posteriori
+    prior_H0 <- pbeta(p0, a, b)
+    prior_H1 <- pbeta(p0, a, b, lower.tail = FALSE)
+    post_H0  <- pbeta(p0, a_star, b_star)
+    post_H1  <- pbeta(p0, a_star, b_star, lower.tail = FALSE)
+
+    # Fator de Bayes em escala logarítmica
+    log_BF01 <- (pbeta(p0, a_star, b_star, log.p = TRUE) -
+                 pbeta(p0, a_star, b_star, lower.tail = FALSE, log.p = TRUE)) -
+                (pbeta(p0, a, b, log.p = TRUE) -
+                 pbeta(p0, a, b, lower.tail = FALSE, log.p = TRUE))
+
+    data.frame(
+        Priori       = paste0("Beta(", a, ", ", b, ")"),
+        Posteriori   = paste0("Beta(", a_star, ", ", b_star, ")"),
+        P_H0         = prior_H0,
+        P_H0_y       = post_H0,
+        odds_priori  = prior_H0 / prior_H1,
+        odds_post    = post_H0 / post_H1,
+        B01          = exp(log_BF01),
+        log10_B01    = log_BF01 / log(10)
+    )
+}
+
+# Classificação pela escala de log10(B01) vista em aula:
+# o valor absoluto dá a força e o sinal dá a hipótese favorecida
+classifica_BF <- function(log10_B01) {
+    forca <- cut(abs(log10_B01), breaks = c(0, 0.5, 1, 2, Inf),
+                 labels = c("Inconclusiva", "Positiva", "Forte", "Muito forte"),
+                 include.lowest = TRUE)
+    ifelse(forca == "Inconclusiva", "Inconclusiva",
+           paste(forca, ifelse(log10_B01 > 0, "a favor de H0", "a favor de H1")))
+}
+
+res1 <- rbind(
+    analise_beta(14, 40, 1, 1),
+    analise_beta(14, 40, 2, 8),
+    analise_beta(14, 40, 20, 20)
+)
+
+kable(res1, digits = 5, row.names = FALSE,
+      col.names = c("Priori", "Posteriori", "P(H0)", "P(H0|y)",
+                    "Odds a priori", "Odds a posteriori", "B01", "log10(B01)"))
+```
+
+::: {.resposta}
+Sintetizando:
+
+- **Beta(1, 1):** As odds de $H_0$ caem de $`r fmt(res1$odds_priori[1], 4)`$ para $`r fmt(res1$odds_post[1], 4)`$, e $B_{01} = `r fmt(res1$B01[1], 4)`$.
+- **Beta(2, 8):** a priori tem média $0,2$ e favorece $H_0$, com $P(H_0) = `r fmt(res1$P_H0[2], 4)`$. Depois dos dados, $P(H_0 \mid y) = `r fmt(res1$P_H0_y[2], 4)`$, e $B_{01} = `r fmt(res1$B01[2], 4)`$.
+- **Beta(20, 20):** a priori é concentrada em torno de $0,5$, com $P(H_0) = `r fmt(res1$P_H0[3], 6)`$. Depois dos dados, $P(H_0 \mid y) = `r fmt(res1$P_H0_y[3], 6)`$, e $B_{01} = `r fmt(res1$B01[3], 4)`$.
+:::
+
+### Resposta 01.c) Interpretação de $\log_{10}(B_{01})$
+
+::: {.resposta}
+Os três valores de $\log_{10}(B_{01})$ são negativos, então os dados favorecem $H_1: p > 0,25$ em todos os casos:
+:::
+
+```{r Resposta 1c}
+tab1c <- data.frame(
+    Priori     = res1$Priori,
+    log10_B01  = res1$log10_B01,
+    B10        = 1 / res1$B01,
+    Evidencia  = classifica_BF(res1$log10_B01)
+)
+
+kable(tab1c, digits = 3, row.names = FALSE,
+      col.names = c("Priori", "log10(B01)", "B10 = 1/B01", "Evidência"))
+```
+
+::: {.resposta}
+Os dados são os mesmos nos três casos; o que muda é a priori. A Beta(2, 8) concentrava a probabilidade em valores baixos de $p$ (média 0,2), favorecendo $H_0$, e os dados (35% de germinação) contrariam essa expectativa, por isso a evidência a favor de $H_1$ é a mais forte. Já a Beta(20, 20) praticamente não dava chance a $H_0$ desde o início, então os dados quase não mudam as odds.
+:::
+
+### Resposta 01.d) Probabilidade a posteriori × Fator de Bayes com a Beta(20, 20)
+
+::: {.resposta}
+As duas abordagens respondem perguntas diferentes:
+
+- **$P(H_0 \mid y)$** mede a credibilidade final de $H_0$, que combina priori e dados.
+- **$B_{01}$** mede quanto os dados *alteraram* as odds de $H_0$ em relação a $H_1$, isto é, $\text{odds a posteriori} = B_{01} \times \text{odds a priori}$.
+
+A Beta(20, 20) é concentrada em torno de 0,5 e já atribuía a $H_0$ uma probabilidade de apenas $`r fmt(res1$P_H0[3], 5)`$ antes de qualquer observação. Depois dos dados, essa probabilidade continua praticamente a mesma ($`r fmt(res1$P_H0_y[3], 5)`$). Ou seja, $P(H_0 \mid y)$ é pequena por causa da priori, e não por causa dos dados.
+
+O Fator de Bayes isola a contribuição dos dados. Ele pode ser visto como a razão entre o quão bem cada hipótese prevê os dados, usando a priori restrita a cada região. Restrita a $H_0$, a priori Beta(20, 20) se concentra logo abaixo de 0,25, perto do limite. Restrita a $H_1$, ela continua centrada perto de 0,5. A proporção observada, 0,35, fica entre essas duas regiões e é explicada de forma parecida pelas duas, então $B_{01} \approx 1$: os dados quase não mudam a credibilidade relativa das hipóteses.
+
+Assim, a probabilidade a posteriori diz "$H_0$ é muito pouco provável", e o Fator de Bayes diz "mas não foram os dados que mostraram isso". As duas leituras são coerentes entre si, mas há essa separação entre o que é o papel da priori do que é o papel dos dados.
+:::
+
+### Resposta 01.e) Efeito do tamanho amostral
+
+```{r Resposta 1e}
+#| collapse: true
+#| comment: ""
+
+res1e <- rbind(
+    analise_beta(7, 20, 1, 1),
+    analise_beta(14, 40, 1, 1),
+    analise_beta(70, 200, 1, 1)
+)
+res1e <- cbind(n = c(20, 40, 200), res1e)
+res1e$Conclusao <- classifica_BF(res1e$log10_B01)
+
+kable(res1e[, c("n", "Posteriori", "P_H0_y", "B01", "log10_B01", "Conclusao")], digits = 5,
+      row.names = FALSE,
+      col.names = c("n", "Posteriori", "P(H0|y)", "B01", "log10(B01)", "Conclusão"))
+```
+
+::: {.resposta}
+Com a mesma priori e a mesma proporção observada (35%), a evidência a favor de $H_1$ cresce com o tamanho da amostra. Com mais observações, a posteriori fica mais concentrada em torno de 0,35, e a massa abaixo de 0,25 diminui rapidamente. Uma proporção de 35% em 20 sementes ainda é compatível com $p \le 0,25$ por acaso. Para 200 sementes, não mais.
+:::
+
+---
+
+::: {.pergunta}
+2. O número de pragas por armadilha segue $Y_i \mid \theta \sim \text{Poisson}(\theta)$. Em 15 armadilhas observou-se $\sum y_i = 48$. Use a priori $\theta \sim \text{Gama}(2, 1)$ (forma, taxa). O fabricante afirma que a taxa média é 4 pragas por armadilha:
+
+$$H_0: \theta = 4 \quad \text{versus} \quad H_1: \theta \ne 4$$
+
+a. Obtenha a posteriori de $\theta$. Por que não é possível testar $H_0$ comparando $P(H_0 \mid y)$ e $P(H_1 \mid y)$ diretamente?
+
+b. Calcule o IC de credibilidade de 95% para $\theta$. O valor 4 é compatível com os dados?
+
+c. Substitua $H_0$ pela região de equivalência $3,5 < \theta < 4,5$ e calcule $P(H_0 \mid y)$.
+
+d. Calcule o valor-e do FBST seguindo o passo a passo da aula: gere 100.000 amostras da posteriori, calcule $p^* = p(4 \mid y)$, a proporção de amostras com $p(\theta^{(m)} \mid y) > p^*$ e $EV(H_0)$.
+
+e. Compare as conclusões dos itens b, c e d.
+:::
+
+## Resposta 02
+
+### Resposta 02.a) Posteriori e hipótese pontual
+
+::: {.resposta}
+Com $n = 15$ e $\sum y_i = 48$, a verossimilhança Poisson é
+
+$$f(y \mid \theta) = \prod_{i=1}^{n} \frac{e^{-\theta}\theta^{y_i}}{y_i!} \propto \theta^{\sum y_i} e^{-n\theta}$$
+
+e a priori $\text{Gama}(\alpha = 2, \beta = 1)$ é $\pi(\theta) \propto \theta^{\alpha - 1}e^{-\beta\theta}$. Logo,
+
+$$\pi(\theta \mid y) \propto \theta^{\left(\alpha + \sum y_i\right) - 1} e^{-(\beta + n)\theta}$$
+
+que é o núcleo de uma Gama:
+
+$$\theta \mid y \sim \text{Gama}\left(\alpha + \sum y_i,\; \beta + n\right) = \text{Gama}(2 + 48,\; 1 + 15) = \text{Gama}(50,\; 16)$$
+
+com média a posteriori $50/16 = 3,125$ e moda $(50 - 1)/16 = 3,0625$.
+
+Respondendo à questão, não é possível comparar $P(H_0 \mid y)$ e $P(H_1 \mid y)$, pois a priori Gama é contínua, portando a probabilidade de qualquer valor pontual vale zero, inviabilizando o seu uso para testar $H_o$.
+:::
+
+### Resposta 02.b) Intervalo de credibilidade de 95%
+
+```{r Resposta 2b}
+#| collapse: true
+#| comment: ""
+
+alpha_post <- 2 + 48
+beta_post  <- 1 + 15
+
+ic_theta <- qgamma(c(0.025, 0.975), alpha_post, beta_post)
+cat("Posteriori: Gama(", alpha_post, ",", beta_post, ")\n")
+cat("IC 95% para theta: [", round(ic_theta[1], 4), ";", round(ic_theta[2], 4), "]\n")
+```
+
+::: {.resposta}
+O intervalo de credibilidade de 95% (quantis 2,5% e 97,5% da Gama(50, 16)) é $[`r fmt(ic_theta[1], 3)`;\ `r fmt(ic_theta[2], 3)`]$. O valor 4 está **dentro** do intervalo, então é compatível com os dados. De qualquer maneira, ele está muito perto do limite superior, portanto é pouco plausível, embora não seja excluído.
+:::
+
+### Resposta 02.c) Região de equivalência
+
+```{r Resposta 2c}
+#| collapse: true
+#| comment: ""
+
+P_H0_equiv <- pgamma(4.5, alpha_post, beta_post) - pgamma(3.5, alpha_post, beta_post)
+cat("P(3,5 < theta < 4,5 | y) =", round(P_H0_equiv, 4), "\n")
+cat("P(H1 | y) =", round(1 - P_H0_equiv, 4), "\n")
+```
+
+::: {.resposta}
+Com $H_0: 3,5 < \theta < 4,5$, a hipótese passa a ter probabilidade positiva:
+
+$$P(H_0 \mid y) = P(3,5 < \theta < 4,5 \mid y) = F(4,5) - F(3,5) = `r fmt(P_H0_equiv, 4)`$$
+
+e $P(H_1 \mid y) = `r fmt(1 - P_H0_equiv, 4)`$. Como $P(H_1 \mid y) > P(H_0 \mid y)$, há mais evidência a posteriori de que a taxa média **não** está na faixa de 3,5 a 4,5 pragas por armadilha. A maior parte da posteriori está abaixo de 3,5.
+:::
+
+### Resposta 02.d) Valor-e do FBST
+
+::: {.resposta}
+Relembrando e seguindo o passo a passo da aula:
+
+1. Hipótese nula: $H_0: \theta = 4$.
+2. Como a posteriori é conhecida, as 100.000 amostras são geradas diretamente da Gama(50, 16).
+3. Maior densidade a posteriori sob $H_0$: como $H_0$ tem um só ponto, $p^* = p(4 \mid y)$.
+4. Densidade a posteriori em cada amostra: $p(\theta^{(m)} \mid y)$.
+5. Coluna binária: $I_m = 1$ se $p(\theta^{(m)} \mid y) > p^*$, e $0$ caso contrário.
+6. Probabilidade do conjunto tangencial: $P(T \mid y) \approx \frac{1}{M}\sum I_m$.
+7. Valor-e: $EV(H_0) = 1 - P(T \mid y)$.
+:::
+
+```{r Resposta 2d}
+#| collapse: true
+#| comment: ""
+
+set.seed(2026)
+M <- 100000
+theta0 <- 4
+
+# Passo 2: amostras da posteriori
+theta_post <- rgamma(M, alpha_post, beta_post)
+
+# Passo 3: densidade a posteriori no ponto de H0
+p_star <- dgamma(theta0, alpha_post, beta_post)
+
+# Passos 4 e 5: densidade em cada amostra e coluna binária
+fbst <- data.frame(
+    theta    = theta_post,
+    dens     = dgamma(theta_post, alpha_post, beta_post),
+    I        = as.integer(dgamma(theta_post, alpha_post, beta_post) > p_star)
+)
+head(fbst)
+
+# Passos 6 e 7
+P_T <- mean(fbst$I)
+EV_H0 <- 1 - P_T
+
+cat("p* = p(4 | y) =", round(p_star, 5), "\n")
+cat("P(T | y) =", round(P_T, 5), "\n")
+cat("EV(H0) =", round(EV_H0, 5), "\n")
+```
+
+::: {.resposta}
+A densidade a posteriori em $\theta = 4$ é $p^* = `r fmt(p_star, 4)`$. O conjunto tangencial $T$ reúne os valores de $\theta$ mais plausíveis que 4 e contém $`r fmt(100 * P_T, 2)`\%$ da posteriori. Logo,
+
+$$EV(H_0) = 1 - P(T \mid y) \approx `r fmt(EV_H0, 4)`$$
+
+O valor-e é pequeno: cerca de 95% da massa da posteriori está em valores mais plausíveis do que $\theta = 4$, o que indica evidência contra $H_0$. Mas o valor está perto de 0,05, então a evidência contra a afirmação do fabricante não é tão forte.
+:::
+
+### Resposta 02.e) Comparação dos itens b, c e d
+
+::: {.resposta}
+| Abordagem | Resultado | Conclusão |
+|:---|:---|:---|
+| IC 95% (b) | $[`r fmt(ic_theta[1], 2)`;\ `r fmt(ic_theta[2], 2)`]$ | 4 é compatível, mas está no limite |
+| Região de equivalência (c) | $P(3,5 < \theta < 4,5 \mid y) = `r fmt(P_H0_equiv, 3)`$ | Mais evidência a favor de $H_1$ |
+| FBST (d) | $EV(H_0) = `r fmt(EV_H0, 3)`$ | Evidência contra $H_0$, mas no limite |
+
+As três análises indicam que a taxa média é menor que a informada pelo frabicante (média a posteriori = 3,125), embora a evidência contra $\theta = 4$ seja apenas moderada.
+
+- O IC e o FBST estão ligados: $EV(H_0) > 0,05$ equivale a $\theta_0$ estar dentro do HPD de 95%. Como $EV(H_0) \approx 0,05$, o valor 4 está praticamente na fronteira do HPD de 95%,  o meesmo acontece com o intervalo de quantis do item b.
+- A região de equivalência busca responder à pergunta: "a taxa está razoavelmente perto de 4?". O Resultado é desfavorável ao fabricante, porque analisa a massa da posteriori em torno de 4, e a maior parte da posteriori está abaixo de 3,5. É importante ressaltar que o resultado depende da escolha da faixa ($\Delta = 0,5$).
+:::
+
+---
+
+::: {.pergunta}
+3. A produtividade (sc/ha) de duas cultivares de feijão foi medida em parcelas independentes:
+
+| Cultivar | Produtividade |
+|:---:|:---|
+| A | 52,1; 48,7; 55,3; 50,9; 53,6; 49,8; 54,2; 51,5 |
+| B | 47,9; 50,2; 45,6; 49,1; 46,8; 48,5; 44,9; 47,3; 49,6; 46,1 |
+
+Considere $Y_{1i} \sim N(\mu_1, \sigma^2)$ e $Y_{2j} \sim N(\mu_2, \sigma^2)$, com prioris $\mu_k \sim N(0, 10^6)$ e $\tau = 1/\sigma^2 \sim \text{Gama}(0,001;\ 0,001)$.
+
+a. Escreva o modelo em JAGS incluindo os nós derivados $\delta = \mu_1 - \mu_2$, $H0 = \text{step}(-\delta)$ e $H1 = 1 - H0$.
+
+b. Avalie a convergência.
+
+c. Teste $H_0: \mu_1 \le \mu_2$ versus $H_1: \mu_1 > \mu_2$ e apresente o IC 95% para $\delta$.
+
+d. Uma diferença de até 2 sc/ha é considerada irrelevante na prática. Calcule $P(|\delta| \le 2 \mid y)$ e interprete.
+
+e. Reajuste o modelo com variâncias distintas $(\sigma_1^2, \sigma_2^2)$ e calcule $P(\sigma_1^2/\sigma_2^2 > 1 \mid y)$. As conclusões sobre $\delta$ mudam?
+:::
+
+## Resposta 03
+
+### Resposta 03.a) Modelo em JAGS
+
+::: {.resposta}
+No JAGS, a normal é parametrizada pela precisão ($\tau = 1/\sigma^2$), então a priori $N(0, 10^6)$ corresponde a dnorm(0, 1.0E-6). O nó H0 = step(-delta) vale 1 quando $\delta \le 0$, isto é, quando $\mu_1 \le \mu_2$. Como $H0$ é uma variável indicadora 0/1, a proporção de iterações em que ela vale 1 estima $P(H_0 \mid y)$.
+:::
+
+```{r Resposta 3a}
+yA <- c(52.1, 48.7, 55.3, 50.9, 53.6, 49.8, 54.2, 51.5)
+yB <- c(47.9, 50.2, 45.6, 49.1, 46.8, 48.5, 44.9, 47.3, 49.6, 46.1)
+
+dados3 <- list(y1 = yA, y2 = yB, n1 = length(yA), n2 = length(yB))
+
+modelo3 <- "
+model {
+  # Verossimilhança: variância comum aos dois grupos
+  for (i in 1:n1) {
+    y1[i] ~ dnorm(mu1, tau)
+  }
+  for (j in 1:n2) {
+    y2[j] ~ dnorm(mu2, tau)
+  }
+
+  # Prioris: N(0, 10^6) na escala de variância = precisão 1.0E-6
+  mu1 ~ dnorm(0, 1.0E-6)
+  mu2 ~ dnorm(0, 1.0E-6)
+  tau ~ dgamma(0.001, 0.001)
+  sigma2 <- 1 / tau
+
+  # Nós derivados
+  delta <- mu1 - mu2
+  H0 <- step(-delta)   # 1 se mu1 <= mu2
+  H1 <- 1 - H0
+}
+"
+
+# Valores iniciais distintos para cada cadeia
+inits3 <- list(
+    c(list(mu1 = 40, mu2 = 60, tau = 0.01), rng(1)),
+    c(list(mu1 = 60, mu2 = 40, tau = 1),    rng(2)),
+    c(list(mu1 = 50, mu2 = 50, tau = 0.1),  rng(3))
+)
+
+jags3 <- jags.model(textConnection(modelo3), data = dados3, inits = inits3,
+                    n.chains = n_cadeias, n.adapt = 1000, quiet = TRUE)
+update(jags3, n_burnin)   # burn-in
+
+amostras3 <- coda.samples(jags3,
+                          variable.names = c("mu1", "mu2", "tau", "sigma2",
+                                             "delta", "H0", "H1"),
+                          n.iter = n_iter)
+```
+
+### Resposta 03.b) Convergência
+
+```{r Resposta 3b traceplot}
+#| fig-width: 11
+#| fig-height: 6
+
+par(mfrow = c(2, 2))
+traceplot(amostras3[, c("mu1", "mu2", "delta", "sigma2")])
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 3b diagnosticos}
+#| collapse: true
+#| comment: ""
+
+# Gelman-Rubin apenas nos parâmetros estocásticos principais
+gelman.diag(amostras3[, c("mu1", "mu2", "tau")], multivariate = FALSE)
+
+effectiveSize(amostras3[, c("mu1", "mu2", "delta", "sigma2")])
+```
+
+```{r Resposta 3b objetos, include=FALSE}
+gr3  <- gelman.diag(amostras3[, c("mu1", "mu2", "tau")], multivariate = FALSE)$psrf[, 1]
+ess3 <- effectiveSize(amostras3[, c("mu1", "mu2", "delta", "sigma2")])
+```
+
+::: {.resposta}
+As três cadeias partem de valores iniciais bem diferentes, mas parecem se misturar bem. O fator de Gelman-Rubin é $`r fmt(max(gr3), 3)`$ ou menos para $\mu_1$, $\mu_2$ e $\tau$, e o tamanho efetivo fica entre $`r fmt(min(ess3), 0)`$ e $`r fmt(max(ess3), 0)`$, próximo das 60.000 amostras totais. [Estranhei ter um valor maior que o valor total (acima dos 60000), mas vi que pode acontecer, pois $ESS = \frac{N}{1 + 2\sum_{k=1}^{\infty} \rho_k}$ e praticamente não há autocorrelação. Se algum der negativo, o denominador fica menor que 1 e o ESS fica maior que N. Achei curioso isso]{style="color: #88241b"}. Voltando ao exercício, como os nós $\delta$, $\sigma^2$, $H0$ e $H1$ são funções de $\mu_1$, $\mu_2$ e $\tau$, eles ficam de fora do Gelman-Rubin, como no material. Há evidência de convergência.
+:::
+
+### Resposta 03.c) Teste direcional e IC 95% para $\delta$
+
+```{r Resposta 3c}
+#| collapse: true
+#| comment: ""
+
+mat3 <- as.matrix(amostras3)
+
+P_H0_3 <- mean(mat3[, "H0"])
+P_H1_3 <- mean(mat3[, "H1"])
+ic_delta3 <- quantile(mat3[, "delta"], c(0.025, 0.975))
+
+c(P_H0 = P_H0_3, P_H1 = P_H1_3)
+c(media_delta = mean(mat3[, "delta"]), ic_delta3)
+```
+
+::: {.resposta}
+$P(H_k \mid y)$ diz a proporção de iterações em que valem 1:
+
+$$P(H_0 \mid y) \approx `r fmt(P_H0_3, 5)` \qquad P(H_1 \mid y) \approx `r fmt(P_H1_3, 5)`$$
+
+Praticamente todas as amostras têm $\mu_1 > \mu_2$, então há uma evidência muito forte a posteriori de que a cultivar A é mais produtiva que a B.
+
+A diferença média a posteriori é $\delta \approx `r fmt(mean(mat3[, "delta"]), 2)`$ sc/ha, com IC 95% de $[`r fmt(ic_delta3[1], 2)`;\ `r fmt(ic_delta3[2], 2)`]$. O intervalo está inteiramente acima de zero, o que concorda com o teste direcional.
+:::
+
+### Resposta 03.d) Equivalência prática
+
+```{r Resposta 3d}
+#| collapse: true
+#| comment: ""
+
+Delta <- 2
+P_equiv3 <- mean(abs(mat3[, "delta"]) <= Delta)
+c(P_equivalencia = P_equiv3, P_nao_equivalencia = 1 - P_equiv3)
+```
+
+::: {.resposta}
+Como $\delta$ é contínuo, $P(\mu_1 = \mu_2 \mid y) = 0$. Com a região de equivalência prática $|\delta| \le 2$ sc/ha:
+
+$$P(|\delta| \le 2 \mid y) \approx `r fmt(P_equiv3, 4)`$$
+
+A probabilidade de a diferença ser irrelevante na prática é de cerca de $`r fmt(100 * P_equiv3, 1)`\%$. Portanto, além de A ser mais produtiva, a diferença é **relevante na prática**: com probabilidade de cerca de $`r fmt(100 * (1 - P_equiv3), 1)`\%$, ela supera 2 sc/ha.
+:::
+
+### Resposta 03.e) Variâncias distintas
+
+```{r Resposta 3e}
+modelo3e <- "
+model {
+  for (i in 1:n1) {
+    y1[i] ~ dnorm(mu1, tau1)
+  }
+  for (j in 1:n2) {
+    y2[j] ~ dnorm(mu2, tau2)
+  }
+
+  mu1 ~ dnorm(0, 1.0E-6)
+  mu2 ~ dnorm(0, 1.0E-6)
+  tau1 ~ dgamma(0.001, 0.001)
+  tau2 ~ dgamma(0.001, 0.001)
+
+  sigma2_1 <- 1 / tau1
+  sigma2_2 <- 1 / tau2
+
+  # Razão de variâncias
+  ratio <- sigma2_1 / sigma2_2
+
+  delta <- mu1 - mu2
+  H0 <- step(-delta)
+  H1 <- 1 - H0
+}
+"
+
+inits3e <- list(
+    c(list(mu1 = 40, mu2 = 60, tau1 = 0.01, tau2 = 1),   rng(4)),
+    c(list(mu1 = 60, mu2 = 40, tau1 = 1,    tau2 = 0.01), rng(5)),
+    c(list(mu1 = 50, mu2 = 50, tau1 = 0.1,  tau2 = 0.1),  rng(6))
+)
+
+jags3e <- jags.model(textConnection(modelo3e), data = dados3, inits = inits3e,
+                     n.chains = n_cadeias, n.adapt = 1000, quiet = TRUE)
+update(jags3e, n_burnin)
+
+amostras3e <- coda.samples(jags3e,
+                           variable.names = c("mu1", "mu2", "tau1", "tau2", "delta",
+                                              "sigma2_1", "sigma2_2", "ratio", "H0", "H1"),
+                           n.iter = n_iter)
+```
+
+```{r Resposta 3e traceplot}
+#| fig-width: 11
+#| fig-height: 6
+
+par(mfrow = c(2, 3))
+traceplot(amostras3e[, c("mu1", "mu2", "delta", "sigma2_1", "sigma2_2", "ratio")])
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 3e diagnosticos}
+#| collapse: true
+#| comment: ""
+
+gelman.diag(amostras3e[, c("mu1", "mu2", "tau1", "tau2")], multivariate = FALSE)
+effectiveSize(amostras3e[, c("mu1", "mu2", "delta", "sigma2_1", "sigma2_2", "ratio")])
+
+mat3e <- as.matrix(amostras3e)
+R <- mat3e[, "ratio"]
+
+c(P_ratio_maior_1 = mean(R > 1))
+
+# Comparação das conclusões sobre delta nos dois modelos
+comp3 <- data.frame(
+    Modelo = c("Variância comum", "Variâncias distintas"),
+    Media_delta = c(mean(mat3[, "delta"]), mean(mat3e[, "delta"])),
+    IC_inf = c(ic_delta3[1], quantile(mat3e[, "delta"], 0.025)),
+    IC_sup = c(ic_delta3[2], quantile(mat3e[, "delta"], 0.975)),
+    P_H1 = c(P_H1_3, mean(mat3e[, "H1"])),
+    P_equiv = c(P_equiv3, mean(abs(mat3e[, "delta"]) <= Delta))
+)
+kable(comp3, digits = 4,
+      col.names = c("Modelo", "Média de δ", "IC 2,5%", "IC 97,5%",
+                    "P(H1|y)", "P(|δ| ≤ 2|y)"))
+```
+
+::: {.resposta}
+As cadeias do novo modelo também convergiram (Gelman-Rubin igual a 1 e tamanhos efetivos altos).
+
+**Razão de variâncias.** $P(\sigma_1^2/\sigma_2^2 > 1 \mid y) \approx `r fmt(mean(R > 1), 3)`$. Logo, a cultivar A tende, com cerca de 75% de chance, a ter variância maior do que a cultivar B. Deve-se ressaltar que são apenas 8 e 10 parcelas, portanto creio eu ser um valor pequeno para acreditar fielmente nos números. 
+
+**Conclusões sobre $\delta$ não mudam.** A média de $\delta$ continua em torno de $`r fmt(comp3$Media_delta[2], 2)`$ sc/ha, $P(H_1 \mid y)$ continua praticamente 1, e $P(|\delta| \le 2 \mid y)$ continua muito baixa. A única diferença é um IC 95% um pouco mais largo ($[`r fmt(comp3$IC_inf[2], 2)`\ ;\ `r fmt(comp3$IC_sup[2], 2)`]$), porque o modelo agora estima duas variâncias com poucos dados em cada grupo. A conclusão de que A é mais produtiva, e de forma relevante na prática, é robusta à suposição sobre as variâncias.
+:::
+
+---
+
+::: {.pergunta}
+4. Contou-se o número de plantas daninhas por m² em áreas sob dois manejos: no manejo convencional (A), 12 quadrados somaram 96 plantas; no manejo integrado (B), 10 quadrados somaram 61 plantas. Considere $Y_A \sim \text{Poisson}(\theta_A)$, $Y_B \sim \text{Poisson}(\theta_B)$ e prioris $\theta \sim \text{Gama}(0,01;\ 0,01)$.
+
+a. Mostre que as posterioris são Gama e obtenha seus parâmetros.
+
+b. Ajuste o modelo em JAGS com os nós $\delta = \theta_A - \theta_B$ e $RR = \theta_A/\theta_B$.
+
+c. Teste $H_0: \theta_A \le \theta_B$ versus $H_1: \theta_A > \theta_B$. Verifique que $P(\delta > 0 \mid y)$ e $P(RR > 1 \mid y)$ coincidem e explique por quê.
+
+d. Apresente o IC 95% para $RR$. A taxa no manejo convencional é pelo menos 20% maior que no integrado? (Calcule $P(RR > 1,2 \mid y)$.)
+:::
+
+## Resposta 04
+
+### Resposta 04.a) Posterioris Gama
+
+::: {.resposta}
+Para um manejo com $n$ quadrados e contagens $y_1, \dots, y_n$, a verossimilhança Poisson é
+
+$$f(y \mid \theta) = \prod_{i=1}^{n} \frac{e^{-\theta}\theta^{y_i}}{y_i!} \propto \theta^{\sum y_i} e^{-n\theta}$$
+
+e a priori $\text{Gama}(0,01;\ 0,01)$ é $\pi(\theta) \propto \theta^{0,01 - 1}e^{-0,01\theta}$. Então,
+
+$$\pi(\theta \mid y) \propto \theta^{\left(0,01 + \sum y_i\right) - 1} e^{-(0,01 + n)\theta} \quad \Rightarrow \quad \theta \mid y \sim \text{Gama}\left(0,01 + \sum y_i,\; 0,01 + n\right)$$
+
+Como as prioris e os dados dos dois manejos são independentes, as posterioris também são independentes:
+
+- **Manejo A:** $n_A = 12$, $\sum y = 96$: $\theta_A \mid y \sim \text{Gama}(96,01;\ 12,01)$, com média $96,01/12,01 \approx 7,994$ plantas/m².
+- **Manejo B:** $n_B = 10$, $\sum y = 61$: $\theta_B \mid y \sim \text{Gama}(61,01;\ 10,01)$, com média $61,01/10,01 \approx 6,095$ plantas/m².
+
+Pelo jeito a priori é bem vaga, pois as médias a posteriori praticamente coincidem com as médias amostrais.
+:::
+
+### Resposta 04.b) Ajuste em JAGS
+
+::: {.resposta}
+Segundo o enunciado:
+
+- Para o Modelo A:
+    - $\sum {y_i}_a = 96$,
+    - $n_a = 12$
+
+- Para o Modelo B:
+
+    - $\sum {y_i}_b = 61$
+    - $n_b = 10$
+:::
+
+```{r Resposta 4b}
+dados4 <- list(SA = 96, nA = 12, SB = 61, nB = 10)
+
+modelo4 <- "
+model {
+  # Verossimilhança: total de cada manejo ~ Poisson(n * theta)
+  SA ~ dpois(nA * thetaA)
+  SB ~ dpois(nB * thetaB)
+
+  # Prioris
+  thetaA ~ dgamma(0.01, 0.01)
+  thetaB ~ dgamma(0.01, 0.01)
+
+  # Diferença e razão de taxas
+  delta <- thetaA - thetaB
+  RR <- thetaA / thetaB
+
+  # Hipóteses direcionais
+  H1 <- step(delta)
+  H0 <- 1 - H1
+}
+"
+
+inits4 <- list(
+    c(list(thetaA = 1,  thetaB = 15), rng(7)),
+    c(list(thetaA = 15, thetaB = 1),  rng(8)),
+    c(list(thetaA = 7,  thetaB = 7),  rng(9))
+)
+
+jags4 <- jags.model(textConnection(modelo4), data = dados4, inits = inits4,
+                    n.chains = n_cadeias, n.adapt = 1000, quiet = TRUE)
+update(jags4, n_burnin)
+
+amostras4 <- coda.samples(jags4,
+                          variable.names = c("thetaA", "thetaB", "delta", "RR", "H0", "H1"),
+                          n.iter = n_iter)
+```
+
+```{r Resposta 4b traceplot}
+#| fig-width: 11
+#| fig-height: 6
+
+par(mfrow = c(2, 2))
+traceplot(amostras4[, c("thetaA", "thetaB", "delta", "RR")])
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 4b diagnosticos}
+#| collapse: true
+#| comment: ""
+
+gelman.diag(amostras4[, c("thetaA", "thetaB")], multivariate = FALSE)
+effectiveSize(amostras4[, c("thetaA", "thetaB", "delta", "RR")])
+
+mat4 <- as.matrix(amostras4)
+
+# Conferência com as posterioris analíticas do item a
+data.frame(
+    Parametro = c("thetaA", "thetaB"),
+    Media_MCMC = colMeans(mat4[, c("thetaA", "thetaB")]),
+    Media_analitica = c(96.01 / 12.01, 61.01 / 10.01),
+    row.names = NULL
+)
+```
+
+::: {.resposta}
+Os traceplots parecem estar bem misturados, o Gelman-Rubin é 1 para $\theta_A$ e $\theta_B$ e os ESS está bem altos. As médias a posteriori obtidas pelo MCMC coincidem com as médias analíticas do item a.
+:::
+
+### Resposta 04.c) Teste direcional
+
+```{r Resposta 4c}
+#| collapse: true
+#| comment: ""
+
+P_delta_pos <- mean(mat4[, "delta"] > 0)
+P_RR_maior1 <- mean(mat4[, "RR"] > 1)
+
+c(P_H0 = mean(mat4[, "H0"]),
+  P_H1 = mean(mat4[, "H1"]),
+  P_delta_maior_0 = P_delta_pos,
+  P_RR_maior_1 = P_RR_maior1)
+
+# As duas indicadoras são iguais em todas as iterações?
+all((mat4[, "delta"] > 0) == (mat4[, "RR"] > 1))
+```
+
+::: {.resposta}
+$$P(H_1 \mid y) = P(\theta_A > \theta_B \mid y) \approx `r fmt(P_delta_pos, 4)` \qquad P(H_0 \mid y) \approx `r fmt(1 - P_delta_pos, 4)`$$
+
+Há maior evidência a posteriori de que a infestação é maior no manejo convencional.
+
+**$P(\delta > 0 \mid y)$ e $P(RR > 1 \mid y)$ coincidem,** pois $\theta_B > 0$, então:
+
+$$RR > 1 \iff \frac{\theta_A}{\theta_B} > 1 \iff \theta_A > \theta_B \iff \delta > 0$$
+
+Em cada iteração do MCMC, $\delta^{(m)} > 0$ se e somente se $RR^{(m)} > 1$, então as proporções são iguais (se rodar a função `all(...)` ela retorna `TRUE`).
+:::
+
+### Resposta 04.d) IC 95% para $RR$ e $P(RR > 1,2 \mid y)$
+
+```{r Resposta 4d}
+#| collapse: true
+#| comment: ""
+
+ic_RR <- quantile(mat4[, "RR"], c(0.025, 0.975))
+P_RR12 <- mean(mat4[, "RR"] > 1.2)
+
+c(media_RR = mean(mat4[, "RR"]), mediana_RR = median(mat4[, "RR"]), ic_RR)
+c(P_RR_maior_1.2 = P_RR12)
+```
+
+::: {.resposta}
+A razão de taxas tem média a posteriori de $`r fmt(mean(mat4[, "RR"]), 3)`$ e IC 95% de $[`r fmt(ic_RR[1], 3)`;\ `r fmt(ic_RR[2], 3)`]$. Ou seja, a taxa de plantas daninhas no manejo convencional é estimada em cerca de $`r fmt(100 * (mean(mat4[, "RR"]) - 1), 0)`\%$ maior que no integrado, mas o intervalo ainda inclui o valor 1.
+
+$$P(RR > 1,2 \mid y) \approx `r fmt(P_RR12, 3)`$$
+
+A probabilidade de a taxa no convencional ser pelo menos 20% maior é de cerca de $`r fmt(100 * P_RR12, 0)`\%$. Há indício favorável, mas não é possível afirmar com segurança, pois em cerca de $`r fmt(100 * (1 - P_RR12), 0)`\%$ da posteriori a diferença é menor que 20%.
+:::
+
+---
+
+::: {.pergunta}
+5. Um experimento em DIC avaliou três doses de adubo (T1, T2, T3) com 5 repetições; a resposta é a altura das plantas (cm):
+
+| Tratamento | Rep. 1 | Rep. 2 | Rep. 3 | Rep. 4 | Rep. 5 |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| T1 | 12,1 | 13,4 | 11,8 | 12,9 | 13,0 |
+| T2 | 14,2 | 13,8 | 15,1 | 14,6 | 14,0 |
+| T3 | 12,5 | 13,1 | 12,2 | 13,6 | 12,8 |
+
+Considere o modelo $Y_{ij} = m + t_j + \varepsilon_{ij}$, com $\varepsilon_{ij} \sim N(0, \sigma^2)$.
+
+a. Explique por que o modelo com prioris independentes para $m$, $t_1$, $t_2$ e $t_3$ não é identificável e quais sintomas isso produz nas cadeias.
+
+b. Ajuste o modelo em JAGS com a restrição de soma nula ($t_3 = -t_1 - t_2$) e, alternativamente, com a restrição de casela de referência ($t_1 = 0$). Interprete $m$ em cada caso.
+
+c. Usando as médias $\mu_j = m + t_j$, calcule $P(\mu_2 > \mu_1 \mid y)$, $P(\mu_2 > \mu_3 \mid y)$ e $P(\mu_2 \text{ ser a maior média} \mid y)$.
+
+d. Avalie a equivalência prática entre T1 e T3 com $\Delta = 0,5$ cm: calcule $P(|\mu_1 - \mu_3| \le 0,5 \mid y)$.
+:::
+
+## Resposta 05
+
+```{r Resposta 5 dados}
+#| collapse: true
+#| comment: ""
+
+y5 <- c(12.1, 13.4, 11.8, 12.9, 13.0,
+        14.2, 13.8, 15.1, 14.6, 14.0,
+        12.5, 13.1, 12.2, 13.6, 12.8)
+trat5 <- rep(1:3, each = 5)
+
+dados5 <- list(y = y5, trat = trat5, n = length(y5), ntrat = 3)
+
+# Médias amostrais por tratamento e média geral
+tapply(y5, trat5, mean)
+mean(y5)
+```
+
+### Resposta 05.a) Por que o modelo sem restrição não é identificável
+
+::: {.resposta}
+Os dados só "enxergam" a média de cada tratamento, $\mu_j = m + t_j$. O problema é que existem infinitas combinações de $m$ e $t_j$ que dão a mesma média.
+
+Por exemplo, a média de T1 é cerca de 12,64 cm. Ela pode vir de $m = 13,27$ e $t_1 = -0,63$, ou de $m = 18,27$ e $t_1 = -5,63$ (somei 5 em $m$ e tirei 5 de $t_1$), ou de $m = 3,27$ e $t_1 = 9,37$, e assim por diante. Se eu somar 5 em $m$ e tirar 5 de **todos** os $t_j$, as três médias ficam exatamente iguais, e o ajuste aos dados também. Como a verossimilhança é a mesma para todas essas combinações, os dados não têm como "decidir" qual é a certa, e $m$ e os $t_j$ não são identificáveis. Há quatro parâmetros ($m$, $t_1$, $t_2$, $t_3$) para apenas três médias.
+
+**Sintomas nas cadeias:**
+
+- as cadeias de $m$ e dos $t_j$ ficam "passeando" sem estabilizar, e cada cadeia pode ficar em um nível diferente;
+- quando $m$ sobe, os $t_j$ descem na mesma quantidade, então as cadeias aparecem "em espelho";
+- falta de convergência: Gelman-Rubin bem acima de 1;
+- autocorrelação muito alta e tamanho efetivo muito baixo;
+- intervalos de credibilidade muito grandes para $m$ e para os $t_j$.
+
+Por fim, as médias propriamente ditas ($\mu_j = m + t_j$) não sofrem com isso, porque o "+5" e o "−5" se cancelam na soma.
+:::
+
+### Resposta 05.b) Restrições de soma nula e de casela de referência
+
+```{r Resposta 5b soma nula}
+modelo5_soma <- "
+model {
+  for (i in 1:n) {
+    y[i] ~ dnorm(m + t[trat[i]], tau)
+  }
+  m ~ dnorm(0, 0.0001)
+  for (j in 1:(ntrat - 1)) {
+    t[j] ~ dnorm(0, 0.0001)
+  }
+  t[ntrat] <- -sum(t[1:(ntrat - 1)])   # soma nula: t3 = -t1 - t2
+
+  tau ~ dgamma(0.01, 0.01)
+  sigma2 <- 1 / tau
+
+  for (j in 1:ntrat) {
+    mu[j] <- m + t[j]
+  }
+}
+"
+
+inits5_soma <- list(
+    c(list(m = 0,  t = c(5, -5, NA),  tau = 0.1), rng(13)),
+    c(list(m = 25, t = c(-5, 5, NA),  tau = 10),  rng(14)),
+    c(list(m = 13, t = c(0, 0, NA),   tau = 1),   rng(15))
+)
+
+jags5_soma <- jags.model(textConnection(modelo5_soma), data = dados5, inits = inits5_soma,
+                         n.chains = n_cadeias, n.adapt = 1000, quiet = TRUE)
+update(jags5_soma, n_burnin)
+amostras5_soma <- coda.samples(jags5_soma, c("m", "t", "mu", "sigma2", "tau"), n.iter = n_iter)
+```
+
+```{r Resposta 5b referencia}
+modelo5_ref <- "
+model {
+  for (i in 1:n) {
+    y[i] ~ dnorm(m + t[trat[i]], tau)
+  }
+  m ~ dnorm(0, 0.0001)
+  t[1] <- 0                            # casela de referência: T1
+  for (j in 2:ntrat) {
+    t[j] ~ dnorm(0, 0.0001)
+  }
+
+  tau ~ dgamma(0.01, 0.01)
+  sigma2 <- 1 / tau
+
+  for (j in 1:ntrat) {
+    mu[j] <- m + t[j]
+  }
+}
+"
+
+inits5_ref <- list(
+    c(list(m = 0,  t = c(NA, 5, -5),  tau = 0.1), rng(16)),
+    c(list(m = 25, t = c(NA, -5, 5),  tau = 10),  rng(17)),
+    c(list(m = 13, t = c(NA, 0, 0),   tau = 1),   rng(18))
+)
+
+jags5_ref <- jags.model(textConnection(modelo5_ref), data = dados5, inits = inits5_ref,
+                        n.chains = n_cadeias, n.adapt = 1000, quiet = TRUE)
+update(jags5_ref, n_burnin)
+amostras5_ref <- coda.samples(jags5_ref, c("m", "t", "mu", "sigma2", "tau"), n.iter = n_iter)
+```
+
+```{r Resposta 5b traceplot}
+#| fig-width: 11
+#| fig-height: 6
+
+par(mfrow = c(2, 3))
+traceplot(amostras5_soma[, c("m", "t[1]", "t[2]")])
+traceplot(amostras5_ref[, c("m", "t[2]", "t[3]")])
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 5b diagnosticos}
+#| collapse: true
+#| comment: ""
+
+# Gelman-Rubin nos parâmetros estocásticos principais de cada parametrização
+gelman.diag(amostras5_soma[, c("m", "t[1]", "t[2]", "tau")], multivariate = FALSE)
+gelman.diag(amostras5_ref[, c("m", "t[2]", "t[3]", "tau")], multivariate = FALSE)
+
+effectiveSize(amostras5_soma[, c("m", "t[1]", "t[2]", "t[3]", "sigma2")])
+effectiveSize(amostras5_ref[, c("m", "t[2]", "t[3]", "sigma2")])
+```
+
+```{r Resposta 5b resumo}
+#| collapse: true
+#| comment: ""
+
+resumo5 <- function(amostras, vars) {
+    mat <- as.matrix(amostras)[, vars]
+    data.frame(
+        Parametro = vars,
+        Media = colMeans(mat),
+        DP = apply(mat, 2, sd),
+        IC_2.5 = apply(mat, 2, quantile, 0.025),
+        IC_97.5 = apply(mat, 2, quantile, 0.975),
+        row.names = NULL
+    )
+}
+
+vars5 <- c("m", "t[1]", "t[2]", "t[3]", "mu[1]", "mu[2]", "mu[3]", "sigma2")
+res5_soma <- resumo5(amostras5_soma, vars5)
+res5_ref  <- resumo5(amostras5_ref, vars5)
+
+kable(res5_soma, digits = 3, caption = "Soma nula")
+kable(res5_ref,  digits = 3, caption = "Casela de referência (t1 = 0)")
+```
+
+::: {.resposta}
+As duas parametrizações convergem (traceplots aparentemente estáveis, Gelman-Rubin igual a 1 e tamanhos efetivos altos), porque agora há apenas uma "ancoragem" de comparação.
+
+**Soma nula ($t_1 + t_2 + t_3 = 0$).** Somando as três médias, $\mu_1 + \mu_2 + \mu_3 = 3m + (t_1 + t_2 + t_3) = 3m$, então
+
+$$m = \frac{\mu_1 + \mu_2 + \mu_3}{3}$$
+
+$m$ é a **média geral** do experimento, estimada em $`r fmt(res5_soma$Media[1], 2)`$ cm (a média amostral geral é $`r fmt(mean(y5), 2)`$ cm), e cada $t_j$ é o **desvio** do tratamento $j$ em relação a essa média geral. T2 está cerca de $`r fmt(res5_soma$Media[3], 2)`$ cm acima da média geral, e T1 e T3 estão abaixo.
+
+**Casela de referência ($t_1 = 0$).** Agora $\mu_1 = m + 0$, então
+
+$$m = \mu_1$$
+
+$m$ é a **média do tratamento de referência T1**, estimada em $`r fmt(res5_ref$Media[1], 2)`$ cm, e $t_2$ e $t_3$ são as **diferenças** de T2 e T3 em relação a T1 ($t_j = \mu_j - \mu_1$).
+
+O significado de $m$ e dos $t_j$ depende da restrição escolhida, mas as médias $\mu_j = m + t_j$ são as mesmas nas duas parametrizações. Por isso, os itens c e d usam as $\mu_j$.
+:::
+
+### Resposta 05.c) Comparação das médias
+
+```{r Resposta 5c}
+#| collapse: true
+#| comment: ""
+
+probs_medias <- function(amostras) {
+    mu <- as.matrix(amostras)[, c("mu[1]", "mu[2]", "mu[3]")]
+    c(P_mu2_maior_mu1 = mean(mu[, 2] > mu[, 1]),
+      P_mu2_maior_mu3 = mean(mu[, 2] > mu[, 3]),
+      P_mu2_maior_media = mean(apply(mu, 1, which.max) == 2))
+}
+
+prob5 <- rbind(Soma_nula = probs_medias(amostras5_soma),
+               Referencia = probs_medias(amostras5_ref))
+kable(prob5, digits = 4,
+      col.names = c("P(μ2 > μ1 | y)", "P(μ2 > μ3 | y)", "P(μ2 é a maior | y)"))
+```
+
+::: {.resposta}
+Em cada iteração do MCMC, compara-se $\mu_2^{(m)}$ com $\mu_1^{(m)}$ e $\mu_3^{(m)}$, e conta-se em quantas iterações $\mu_2$ é a maior das três. Com a parametrização de soma nula:
+
+- $P(\mu_2 > \mu_1 \mid y) \approx `r fmt(prob5[1, 1], 4)`$;
+- $P(\mu_2 > \mu_3 \mid y) \approx `r fmt(prob5[1, 2], 4)`$;
+- $P(\mu_2 \text{ ser a maior média} \mid y) \approx `r fmt(prob5[1, 3], 4)`$.
+
+A dose T2 produz plantas mais altas que T1 e T3, com probabilidade a posteriori praticamente igual a 1. Em quase todas as iterações, $\mu_2$ foi a maior das três médias. As duas parametrizações (soma nula e casela de referência) dão os mesmos resultados, a menos do erro de Monte Carlo.
+:::
+
+### Resposta 05.d) Equivalência prática entre T1 e T3
+
+```{r Resposta 5d}
+#| collapse: true
+#| comment: ""
+
+mu5 <- as.matrix(amostras5_soma)[, c("mu[1]", "mu[2]", "mu[3]")]
+d13 <- mu5[, 1] - mu5[, 3]
+
+P_equiv5 <- mean(abs(d13) <= 0.5)
+c(media_dif = mean(d13), quantile(d13, c(0.025, 0.975)), P_equivalencia = P_equiv5)
+```
+
+::: {.resposta}
+A diferença $\mu_1 - \mu_3$ tem média a posteriori de $`r fmt(mean(d13), 2)`$ cm e IC 95% de $[`r fmt(quantile(d13, 0.025), 2)`;\ `r fmt(quantile(d13, 0.975), 2)`]$. Com a margem de equivalência $\Delta = 0,5$ cm:
+
+$$P(|\mu_1 - \mu_3| \le 0,5 \mid y) \approx `r fmt(P_equiv5, 3)`$$
+
+Há cerca de $`r fmt(100 * P_equiv5, 0)`\%$ de probabilidade de que T1 e T3 sejam equivalentes na prática. A diferença estimada é pequena (cerca de 0,2 cm), então T1 e T3 tendem a ser equivalentes. Todavia, a evidência não é totalmente conclusiva, pois em cerca de $`r fmt(100 * (1 - P_equiv5), 0)`\%$ da posteriori a diferença ultrapassa 0,5 cm. Com 5 repetições, a incerteza ainda é grande em relação à margem de 0,5cm.
+:::

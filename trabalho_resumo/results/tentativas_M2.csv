@@ -1,0 +1,7 @@
+"versao","rhat_max","ess_min","divergencias","treedepth_max","sigma_hist","ess_sigma_hist","delta_PF","delta_PM","delta_PR"
+"1: ingênuo (half-normal)",1.023,216,9,0,3.83,219,12,4.3,-5.5
+"2: + âncora (half-normal)",1.011,307,0,0,3.84,307,8.2,0.9,-9.1
+"3: + Gama em sigma_hist (half-normal)",1.007,678,0,0,4.1,854,8.2,0.8,-9.1
+"3: idem, com half-Cauchy",1.015,606,0,0,4.2,606,8.1,1,-9.1
+"4: + delta não centrado (half-normal) FINAL",1.01,422,1,0,3.99,422,8.3,0.9,-9.1
+"4: idem, com half-Cauchy",1.012,594,0,0,4.06,736,8.3,0.9,-9.2

@@ -1,0 +1,1704 @@
+---
+title: "EST613 - ESTATÍSTICA BAYESIANA <br> LISTA DE EXERCÍCIOS 05"
+author: "João Paulo Gusmão Teixeira (64316)"
+format:
+  html:
+    toc: true
+    code-overflow: wrap
+    embed-resources: true
+---
+
+```{=html}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
+
+.pergunta {
+  color: #174A7E; /* Azul escuro elegante */
+  font-weight: bold;
+}
+
+.resposta {
+  font-family: 'Architects Daughter', cursive;
+  font-size: 1.2rem;
+}
+
+.diagcell {
+  background: linear-gradient(to top right, transparent calc(50% - 1px), #dee2e6 calc(50% - 1px), #dee2e6 calc(50% + 1px), transparent calc(50% + 1px));
+  position: relative;
+  min-width: 100px;
+  height: 50px;
+}
+.diag-bottom {
+  position: absolute;
+  bottom: 2px;
+  left: 5px;
+}
+.diag-top {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+}
+
+</style>
+```
+
+```{r setup, include=FALSE}
+# Pacotes utilizados ao longo da lista (instalados fora do ambiente qmd)
+library(coda)
+library(HDInterval)
+library(rstan)
+library(knitr)
+
+# Formatação de números no texto (separador de milhar e vírgula decimal)
+fmt <- function(x) format(x, big.mark = ".", decimal.mark = ",", scientific = FALSE)
+
+rstan_options(auto_write = TRUE)
+
+knitr::opts_chunk$set(
+    echo = TRUE,
+    warning = FALSE,
+    message = FALSE,
+    fig.align = "center"
+)
+```
+
+::: {.pergunta}
+1. Considere a integral
+
+$$\int_1^4 4e^{-0,5x} \, dx$$
+
+Pede-se:
+
+a. Calcule o valor exato da integral.
+
+b. Calcule uma aproximação para a integral utilizando o Método do Ponto Médio, considerando a divisão do intervalo $[1,4]$ em 6 subintervalos de mesmo comprimento.
+
+c. Escreva a expressão utilizada para aproximar essa integral por meio da Integração de Monte Carlo, gerando valores aleatórios de uma distribuição Uniforme no intervalo $[1,4]$.
+
+d. Utilizando set.seed(1234), obtenha as estimativas de Monte Carlo da integral para: N=10, N=100, N=100.000. Compare os valores obtidos com o valor exato da integral.
+:::
+
+## Resposta 01
+
+### Resposta 01.a) Valor exato
+
+::: {.resposta}
+Pelo Teorema Fundamental do Cálculo, preciso de uma primitiva de $f(x) = 4e^{-0,5x}$.
+
+Sabendo que $\int e^{kx}dx = \frac{1}{k}e^{kx}$, com $k = -0,5$:
+
+$$\int 4e^{-0,5x}\,dx = 4 \cdot \frac{1}{-0,5} e^{-0,5x} = -8e^{-0,5x}$$
+
+Aplicando os limites de integração:
+
+$$I = \Big[-8e^{-0,5x}\Big]_1^4 = \left(-8e^{-0,5 \times 4}\right) - \left(-8e^{-0,5 \times 1}\right)$$
+
+$$I = -8e^{-2} + 8e^{-0,5} = 8\left(e^{-0,5} - e^{-2}\right)$$
+
+$$I = 8\,(0,606531 - 0,135335) = 8 \times 0,471195$$
+
+$$I \approx \mathbf{3,769563}$$
+:::
+
+```{r Resposta 1a}
+#| collapse: true
+#| comment: ""
+
+# Função a ser integrada
+f1 <- function(x) 4 * exp(-0.5 * x)
+
+# Limites de integração
+a1 <- 1
+b1 <- 4
+
+# Valor exato: 8 * (e^(-0,5) - e^(-2))
+I_exato <- 8 * (exp(-0.5) - exp(-2))
+
+# Conferindo com a integração numérica do R
+cat("Valor exato:", round(I_exato, 6), "\n")
+cat("integrate():", round(integrate(f1, a1, b1)$value, 6), "\n")
+```
+
+### Resposta 01.b) Método do Ponto Médio
+
+::: {.resposta}
+Seguindo o algoritmo do Tópico 6:
+
+**i. Largura de cada subintervalo**, com $k = 6$:
+
+$$\Delta x = \frac{b - a}{k} = \frac{4 - 1}{6} = 0,5$$
+
+**ii. Pontos médios.** O $i$-ésimo ponto médio é dado por $x_i = a + \left(i - \frac{1}{2}\right)\Delta x$:
+
+- $x_1 = 1 + 0,5 \times 0,5 = 1,25$
+- $x_2 = 1 + 1,5 \times 0,5 = 1,75$
+- $x_3 = 1 + 2,5 \times 0,5 = 2,25$
+- $x_4 = 1 + 3,5 \times 0,5 = 2,75$
+- $x_5 = 1 + 4,5 \times 0,5 = 3,25$
+- $x_6 = 1 + 5,5 \times 0,5 = 3,75$
+
+**iii. e iv. Altura e área de cada retângulo**, com $A_i = \Delta x \cdot f(x_i)$:
+
+| $i$ | $x_i$ | $f(x_i) = 4e^{-0,5x_i}$ | $A_i = 0,5 \cdot f(x_i)$ |
+|:---:|:-----:|:-----------------------:|:------------------------:|
+| 1 | 1,25 | 2,141046 | 1,070523 |
+| 2 | 1,75 | 1,667448 | 0,833724 |
+| 3 | 2,25 | 1,298610 | 0,649305 |
+| 4 | 2,75 | 1,011358 | 0,505679 |
+| 5 | 3,25 | 0,787647 | 0,393823 |
+| 6 | 3,75 | 0,613420 | 0,306710 |
+
+**v. Soma das áreas:**
+
+$$I \approx \sum_{i=1}^{6} A_i = 1,070523 + 0,833724 + 0,649305 + 0,505679 + 0,393823 + 0,306710$$
+
+$$I \approx \mathbf{3,759764}$$
+:::
+
+```{r Resposta 1b}
+#| collapse: true
+#| comment: ""
+
+k <- 6
+dx <- (b1 - a1) / k
+
+# Pontos médios: x_i = a + (i - 1/2) * dx
+x_medio <- a1 + (1:k - 0.5) * dx
+
+tabela_pm <- data.frame(
+  i = 1:k,
+  x_i = x_medio,
+  f_xi = f1(x_medio),
+  A_i = dx * f1(x_medio)
+)
+kable(tabela_pm, digits = 6)
+
+I_pm <- sum(tabela_pm$A_i)
+erro_pm <- abs(I_pm - I_exato)
+
+cat("Ponto Médio:", round(I_pm, 6), "| Erro absoluto:", round(erro_pm, 6), "\n")
+```
+
+::: {.resposta}
+O Método do Ponto Médio resultou em `r round(I_pm, 6)`, com um erro de `r round(erro_pm, 6)` em relação ao valor exato. Mesmo com apenas 6 retângulos, a aproximação já ficou bem próxima do valor real.
+:::
+
+### Resposta 01.c) Expressão da Integração de Monte Carlo
+
+::: {.resposta}
+A ideia é transformar a integral numa esperança. Multiplicando e dividindo por $(b-a)$:
+
+$$I = \int_1^4 f(x)\,dx = (4 - 1)\int_1^4 \frac{1}{4 - 1} f(x)\,dx$$
+
+Como $\frac{1}{4-1}$ é a f.d.p. de uma $U(1,4)$:
+
+$$I = (4 - 1)\, E_U\left[f(U)\right], \quad U \sim U(1,4)$$
+
+Gerando $u_1, u_2, \dots, u_N \overset{iid}{\sim} U(1,4)$, a esperança é estimada pela média amostral (Lei dos Grandes Números):
+
+$$\boxed{\hat{I}_N = (4 - 1)\,\frac{1}{N}\sum_{i=1}^{N} 4e^{-0,5u_i} = \frac{3}{N}\sum_{i=1}^{N} 4e^{-0,5u_i}}$$
+:::
+
+### Resposta 01.d) Estimativas de Monte Carlo
+
+```{r Resposta 1d}
+#| collapse: true
+#| comment: ""
+
+tamanhos <- c(10, 100, 100000)
+I_mc <- numeric(length(tamanhos))
+
+for (j in seq_along(tamanhos)) {
+  set.seed(1234) # mesma semente para cada N
+  u <- runif(tamanhos[j], min = a1, max = b1)
+  I_mc[j] <- (b1 - a1) * mean(f1(u))
+}
+
+tabela_mc <- data.frame(
+  N = fmt(tamanhos),
+  Estimativa_MC = I_mc,
+  Valor_exato = I_exato,
+  Erro_absoluto = abs(I_mc - I_exato)
+)
+kable(tabela_mc, digits = 6)
+```
+
+::: {.resposta}
+Com $N = 10$ a estimativa foi `r round(I_mc[1], 4)` e com $N = 100$ foi `r round(I_mc[2], 4)`. Com poucos valores, o resultado ainda depende muito de quais $u_i$ foram sorteados (no caso de $N = 100$, o erro inclusive foi maior que com $N = 10$). Com $N = 100.000$ a estimativa foi `r round(I_mc[3], 4)`, com erro de apenas `r round(abs(I_mc[3] - I_exato), 4)`.
+
+:::
+
+::: {.pergunta}
+2. Considere a seguinte estrutura de análise bayesiana:
+
+$$Y \sim \text{Binomial}(m, p) \qquad p \sim \text{Beta}(a, b),$$
+
+de modo que:
+
+$$p \mid y \sim \text{Beta}\left(\sum_{i=1}^n y_i + a, \; nm - \sum_{i=1}^n y_i + b\right).$$
+
+Considere $n = 20$, $m = 4$, $\sum_{i=1}^n y_i = 21$, $a = 2$, $b = 5$.
+
+a) Determine $E(p|Y)$ e $V(p|Y)$, isto é, a média e a variância a posteriori, utilizando as propriedades da distribuição Beta.
+
+b) Mostre como $E(p|Y)$ e $V(p|Y)$ podem ser aproximadas por Integração de Monte Carlo, utilizando valores simulados de:
+
+- uma distribuição Uniforme(0,1);
+- da distribuição a priori $p \sim \text{Beta}(2,5)$.
+
+Em cada caso, apresente as expressões utilizadas para estimar as quantidades $E(p|Y)$ e $V(p|Y)$.
+
+c) Utilizando set.seed(1234) para N = 1000 valores simulados, obtenha as estimativas de $E(p|Y)$ e $V(p|Y)$ para:
+
+- amostragem pela distribuição Uniforme(0,1);
+- amostragem pela distribuição a priori $p \sim \text{Beta}(2,5)$.
+
+Compare os resultados obtidos pelos dois procedimentos com os valores exatos do item (a).
+:::
+
+## Resposta 02
+
+### Resposta 02.a) Valores exatos
+
+::: {.resposta}
+**Hiperparâmetros da posteriori:**
+
+$$a^* = \sum_{i=1}^n y_i + a = 21 + 2 = \mathbf{23}$$
+
+$$b^* = nm - \sum_{i=1}^n y_i + b = (20 \times 4) - 21 + 5 = 80 - 21 + 5 = \mathbf{64}$$
+
+Logo, $p \mid y \sim \text{Beta}(23, 64)$.
+
+**Média a posteriori:**
+
+$$E(p \mid y) = \frac{a^*}{a^* + b^*} = \frac{23}{23 + 64} = \frac{23}{87} \approx \mathbf{0,264368}$$
+
+**Variância a posteriori:**
+
+$$V(p \mid y) = \frac{a^* b^*}{(a^* + b^*)^2 (a^* + b^* + 1)} = \frac{23 \times 64}{87^2 \times 88}$$
+
+$$V(p \mid y) = \frac{1472}{7569 \times 88} = \frac{1472}{666072} \approx \mathbf{0,002210}$$
+:::
+
+```{r Resposta 2a}
+#| collapse: true
+#| comment: ""
+
+# Para ter certeza:
+n2 <- 20
+m2 <- 4
+soma_y2 <- 21
+a2 <- 2
+b2 <- 5
+
+a2_post <- soma_y2 + a2
+b2_post <- n2 * m2 - soma_y2 + b2
+
+E2_exato <- a2_post / (a2_post + b2_post)
+V2_exato <- (a2_post * b2_post) / ((a2_post + b2_post)^2 * (a2_post + b2_post + 1))
+
+cat("p | y ~ Beta(", a2_post, ",", b2_post, ")\n")
+cat("E(p|y) =", round(E2_exato, 6), "\n")
+cat("V(p|y) =", round(V2_exato, 6), "\n")
+```
+
+### Resposta 02.b) Expressões de Monte Carlo
+
+::: {.resposta}
+Considere $p \in [0, 1]$, com:
+
+- verossimilhança (núcleo): $f(y \mid p) \propto p^{\sum y_i}(1 - p)^{nm - \sum y_i} = p^{21}(1 - p)^{59}$. As constantes $\binom{m}{y_i}$ se cancelam no numerador e no denominador;
+- priori: $\pi(p) = \frac{\Gamma(7)}{\Gamma(2)\Gamma(5)}\,p^{2-1}(1-p)^{5-1}$, isto é, $p \sim \text{Beta}(2,5)$.
+
+**Distribuição a posteriori:** pela regra de Bayes,
+
+$$\pi(p \mid y) = \frac{f(y \mid p)\,\pi(p)}{f(y)} = \frac{f(y \mid p)\,\pi(p)}{\int_0^1 f(y \mid p)\,\pi(p)\,dp}$$
+
+**Estimador bayesiano pontual:** a média a posteriori é
+
+$$E(p \mid y) = \int_0^1 p\,\pi(p \mid y)\,dp = \int_0^1 p\,\frac{f(y \mid p)\,\pi(p)}{\int_0^1 f(y \mid p)\,\pi(p)\,dp}\,dp$$
+
+Logo, é preciso aproximar duas integrais: o **denominador** $\int_0^1 f(y \mid p)\,\pi(p)\,dp$ e o **numerador** $\int_0^1 p\,f(y \mid p)\,\pi(p)\,dp$.
+
+#### Caso 1: amostragem pela Uniforme(0,1)
+
+Neste caso, os valores são gerados da distribuição Uniforme: $p_1, \dots, p_N \overset{iid}{\sim} U(0,1)$.
+
+**Aproximação do denominador:** como a densidade da $U(0,1)$ é $\frac{1}{1-0} = 1$,
+
+$$\int_0^1 f(y \mid p)\,\pi(p)\,dp = (1-0)\int_0^1 \frac{1}{1-0}\,f(y \mid p)\,\pi(p)\,dp = (1-0)\,E_U\left[f(Y \mid p)\,\pi(p)\right] \cong \frac{1}{N}\sum_{i=1}^N f(y \mid p_i)\,\pi(p_i)$$
+
+**Aproximação do numerador:** da mesma forma,
+
+$$\int_0^1 p\,f(y \mid p)\,\pi(p)\,dp = (1-0)\,E_U\left[p\,f(Y \mid p)\,\pi(p)\right] \cong \frac{1}{N}\sum_{i=1}^N p_i\,f(y \mid p_i)\,\pi(p_i)$$
+
+**Estimador final:** dividindo o numerador pelo denominador, o fator $\frac{1}{N}$ se cancela:
+
+$$\boxed{\hat{E}(p \mid y) \cong \frac{\sum_{i=1}^N p_i\,f(y \mid p_i)\,\pi(p_i)}{\sum_{i=1}^N f(y \mid p_i)\,\pi(p_i)}}$$
+
+De modo análogo, para $p^2$:
+
+$$\hat{E}(p^2 \mid y) \cong \frac{\sum_{i=1}^N p_i^2\,f(y \mid p_i)\,\pi(p_i)}{\sum_{i=1}^N f(y \mid p_i)\,\pi(p_i)}$$
+
+e a variância a posteriori é estimada por:
+
+$$\boxed{\hat{V}(p \mid y) \cong \frac{\sum_{i=1}^N p_i^2\,f(y \mid p_i)\,\pi(p_i)}{\sum_{i=1}^N f(y \mid p_i)\,\pi(p_i)} - \left[\frac{\sum_{i=1}^N p_i\,f(y \mid p_i)\,\pi(p_i)}{\sum_{i=1}^N f(y \mid p_i)\,\pi(p_i)}\right]^2}$$
+
+#### Caso 2: amostragem pela priori Beta(2,5)
+
+Neste caso, os valores são gerados da própria distribuição a priori: $p_1, \dots, p_N \overset{iid}{\sim} \text{Beta}(2,5)$.
+
+**Denominador da distribuição a posteriori:** como os valores são gerados da própria priori $\pi(p)$, a integral é uma esperança em relação a ela:
+
+$$\int_0^1 f(y \mid p)\,\pi(p)\,dp = \int_0^1 \left[f(y \mid p)\right]\pi(p)\,dp = E_{\pi}\left[f(Y \mid p)\right] \cong \frac{1}{N}\sum_{i=1}^N f(y \mid p_i)$$
+
+**Numerador da média a posteriori:**
+
+$$\int_0^1 p\,f(y \mid p)\,\pi(p)\,dp = \int_0^1 \left[p\,f(y \mid p)\right]\pi(p)\,dp = E_{\pi}\left[p\,f(Y \mid p)\right] \cong \frac{1}{N}\sum_{i=1}^N p_i\,f(y \mid p_i)$$
+
+**A média a posteriori:**
+
+$$\boxed{\hat{E}(p \mid y) \cong \frac{\sum_{i=1}^N p_i\,f(y \mid p_i)}{\sum_{i=1}^N f(y \mid p_i)}}$$
+
+De modo análogo, para $p^2$:
+
+$$\hat{E}(p^2 \mid y) \cong \frac{\sum_{i=1}^N p_i^2\,f(y \mid p_i)}{\sum_{i=1}^N f(y \mid p_i)}$$
+
+e a variância a posteriori é estimada por:
+
+$$\boxed{\hat{V}(p \mid y) \cong \frac{\sum_{i=1}^N p_i^2\,f(y \mid p_i)}{\sum_{i=1}^N f(y \mid p_i)} - \left[\frac{\sum_{i=1}^N p_i\,f(y \mid p_i)}{\sum_{i=1}^N f(y \mid p_i)}\right]^2}$$
+
+A diferença entre os dois casos está apenas no peso de cada $p_i$. Na Uniforme, o peso é $f(y \mid p_i)\,\pi(p_i)$. Na priori, é só $f(y \mid p_i)$, porque a priori já está representada na frequência com que os $p_i$ foram gerados.
+:::
+
+### Resposta 02.c) Estimativas com N = 1000
+
+```{r Resposta 2c}
+#| collapse: true
+#| comment: ""
+
+N2 <- 1000
+
+# Núcleo da verossimilhança: p^(soma y) * (1 - p)^(nm - soma y)
+veross2 <- function(p) p^soma_y2 * (1 - p)^(n2 * m2 - soma_y2)
+
+# --- Caso 1: Uniforme(0,1) ---
+set.seed(1234)
+p_unif <- runif(N2, 0, 1)
+peso_unif <- veross2(p_unif) * dbeta(p_unif, a2, b2) # L(y|p) * pi(p)
+
+E_unif <- sum(p_unif * peso_unif) / sum(peso_unif)
+E2_unif <- sum(p_unif^2 * peso_unif) / sum(peso_unif)
+V_unif <- E2_unif - E_unif^2
+
+# --- Caso 2: priori Beta(2,5) ---
+set.seed(1234)
+p_priori <- rbeta(N2, a2, b2)
+peso_priori <- veross2(p_priori) # apenas L(y|p)
+
+E_priori <- sum(p_priori * peso_priori) / sum(peso_priori)
+E2_priori <- sum(p_priori^2 * peso_priori) / sum(peso_priori)
+V_priori <- E2_priori - E_priori^2
+
+tabela_2c <- data.frame(
+  Metodo = c("Valor exato - Beta(23, 64)", "MC - Uniforme(0,1)", "MC - Priori Beta(2,5)"),
+  Media = c(E2_exato, E_unif, E_priori),
+  Variancia = c(V2_exato, V_unif, V_priori),
+  Erro_Media = abs(c(E2_exato, E_unif, E_priori) - E2_exato),
+  Erro_Variancia = abs(c(V2_exato, V_unif, V_priori) - V2_exato)
+)
+kable(tabela_2c, digits = 6)
+```
+
+```{r Resposta 2c grafico}
+#| fig-width: 8
+#| fig-height: 4.5
+
+# Visualização: priori, posteriori exata e as duas densidades de amostragem
+curve(dbeta(x, a2_post, b2_post), from = 0, to = 1, n = 500, lwd = 2, col = "firebrick3",
+      xlab = "p", ylab = "Densidade", main = "Posteriori Beta(23,64) e densidades de amostragem")
+curve(dbeta(x, a2, b2), add = TRUE, lwd = 2, col = "royalblue3", lty = 2)
+abline(h = 1, lwd = 2, col = "gray50", lty = 3)
+legend("topright", legend = c("Posteriori Beta(23,64)", "Priori Beta(2,5)", "Uniforme(0,1)"),
+       col = c("firebrick3", "royalblue3", "gray50"), lty = c(1, 2, 3), lwd = 2, bty = "n")
+```
+
+::: {.resposta}
+Os dois procedimentos chegaram a valores próximos do exato. Para a média, a Uniforme deu `r round(E_unif, 4)` e a priori deu `r round(E_priori, 4)`, contra `r round(E2_exato, 4)` exato. Para a variância, os valores foram `r round(V_unif, 6)` e `r round(V_priori, 6)`, contra `r round(V2_exato, 6)`.
+
+Pelo gráfico, dá para perceber que a priori Beta(2,5) concentra mais pontos na região em que a posteriori tem massa (em torno de 0,26) do que a Uniforme, que espalha os pontos por todo o intervalo $(0,1)$, inclusive em regiões onde $L(y|p)\pi(p) \approx 0$. Por isso, a amostragem pela priori tende a desperdiçar menos valores, o que se refletiu em um erro menor na variância. Com $N = 1000$, porém, ainda há bastante variação de Monte Carlo nos dois casos.
+:::
+
+::: {.pergunta}
+3. Considere a função densidade de probabilidade
+
+$$f(x) = 6x(1 - x), \quad 0 \leq x \leq 1.$$
+
+Utilize como distribuição candidata $\text{Beta}(2,2)$ e considere $M = 3$.
+
+a) Explique por que a distribuição $\text{Beta}(2,2)$ pode ser utilizada como distribuição candidata.
+
+b) Verifique se a condição $f(x) \leq Mq(x)$ é satisfeita para $M = 3$. O que esse valor de M implica para a taxa teórica de aceitação do método?
+
+c) Determine os valores exatos de $E(X)$ e $V(X)$ da distribuição alvo.
+
+d) Utilize o Método de Aceitação-Rejeição para gerar valores da distribuição alvo e obtenha estimativas para $E(X)$ e $V(X)$.
+
+e) Calcule as taxas observadas de aceitação e rejeição e compare a taxa de aceitação obtida com a taxa teórica esperada.
+:::
+
+## Resposta 03
+
+### Resposta 03.a) Por que a Beta(2,2) pode ser candidata
+
+::: {.resposta}
+Para ser candidata, a distribuição precisa (i) ser de fácil amostragem, (ii) ter suporte que contenha o suporte da distribuição alvo e (iii) existir $M$ finito tal que $\frac{f(x)}{q(x)} \leq M$.
+
+Escrevendo a f.d.p. da Beta(2,2):
+
+$$q(x) = \frac{\Gamma(2 + 2)}{\Gamma(2)\,\Gamma(2)}\,x^{2-1}(1 - x)^{2-1} = \frac{3!}{1! \times 1!}\,x(1 - x) = 6x(1 - x)$$
+
+Ou seja, $q(x) = f(x)$: a distribuição alvo **é** a própria Beta(2,2). Ela tem o mesmo suporte $[0,1]$, pode ser gerada no R  (`rbeta()`) e a razão $\frac{f(x)}{q(x)} = 1$ é limitada, então atende a todas as condições.
+:::
+
+### Resposta 03.b) Condição $f(x) \leq Mq(x)$ e taxa teórica
+
+::: {.resposta}
+Como $f(x) = q(x)$:
+
+$$M q(x) = 3 \times 6x(1 - x) = 18x(1 - x)$$
+
+$$f(x) \leq Mq(x) \iff 6x(1 - x) \leq 18x(1 - x) \iff 1 \leq 3 \quad \checkmark$$
+
+A condição é satisfeita para todo $x \in [0,1]$. Porém, o menor $M$ possível seria $M = \sup_x \frac{f(x)}{q(x)} = 1$, então $M = 3$ está "folgado".
+
+A probabilidade de aceitação de cada candidato é:
+
+$$\frac{f(x^*)}{M q(x^*)} = \frac{6x^*(1 - x^*)}{3 \times 6x^*(1 - x^*)} = \frac{1}{3}$$
+
+Logo, a taxa teórica de aceitação é $\frac{1}{M} = \frac{1}{3} \approx \mathbf{0,3333}$ e a de rejeição é $\frac{2}{3} \approx 0,6667$. O número de iterações até a primeira aceitação segue uma Geométrica com $E = M = 3$, ou seja, em média são necessárias 3 propostas para aceitar 1 valor.
+:::
+
+### Resposta 03.c) $E(X)$ e $V(X)$ exatos
+
+::: {.resposta}
+**Pela integral:**
+
+$$E(X) = \int_0^1 x \cdot 6x(1 - x)\,dx = 6\int_0^1 (x^2 - x^3)\,dx = 6\left[\frac{x^3}{3} - \frac{x^4}{4}\right]_0^1 = 6\left(\frac{1}{3} - \frac{1}{4}\right) = 6 \times \frac{1}{12} = \mathbf{0,5}$$
+
+$$E(X^2) = \int_0^1 x^2 \cdot 6x(1 - x)\,dx = 6\int_0^1 (x^3 - x^4)\,dx = 6\left[\frac{x^4}{4} - \frac{x^5}{5}\right]_0^1 = 6\left(\frac{1}{4} - \frac{1}{5}\right) = \frac{6}{20} = 0,3$$
+
+$$V(X) = E(X^2) - [E(X)]^2 = 0,3 - 0,5^2 = 0,3 - 0,25 = \mathbf{0,05}$$
+
+**Conferindo pelas propriedades da Beta(2,2):**
+
+$$E(X) = \frac{\alpha}{\alpha + \beta} = \frac{2}{4} = 0,5 \qquad V(X) = \frac{\alpha\beta}{(\alpha + \beta)^2(\alpha + \beta + 1)} = \frac{4}{16 \times 5} = 0,05$$
+:::
+
+### Resposta 03.d) Método de Aceitação-Rejeição
+
+```{r Resposta 3d}
+#| collapse: true
+#| comment: ""
+
+set.seed(1234)
+
+f_alvo <- function(x) 6 * x * (1 - x) # f(x)
+M3 <- 3
+
+N3 <- 10000            # número de valores aceitos desejados
+x_aceitos <- numeric(N3)
+l <- 0                 # contador de aceitos
+total <- 0             # contador de propostas
+
+while (l < N3) {
+  total <- total + 1
+
+  # i. candidato da Beta(2,2)
+  x_star <- rbeta(1, shape1 = 2, shape2 = 2)
+
+  # ii. valor da Uniforme(0,1)
+  u <- runif(1)
+
+  # iii. aceita se u <= f(x*) / (M q(x*))
+  if (u <= f_alvo(x_star) / (M3 * dbeta(x_star, 2, 2))) {
+    l <- l + 1
+    x_aceitos[l] <- x_star
+  }
+}
+
+E3_ar <- mean(x_aceitos)
+V3_ar <- var(x_aceitos)
+
+kable(data.frame(
+  Quantidade = c("E(X)", "V(X)"),
+  Exato = c(0.5, 0.05),
+  Aceitacao_Rejeicao = c(E3_ar, V3_ar)
+), digits = 6)
+```
+
+```{r Resposta 3d grafico}
+#| fig-width: 7
+#| fig-height: 4.5
+
+hist(x_aceitos, breaks = 40, probability = TRUE, col = adjustcolor("pink", alpha.f = 0.7),
+     border = "white", main = "Valores aceitos x densidade alvo f(x) = 6x(1-x)",
+     xlab = "x", ylab = "Densidade")
+curve(f_alvo(x), add = TRUE, lwd = 2, col = "violet")
+```
+
+::: {.resposta}
+Com `r fmt(N3)` valores aceitos, as estimativas foram $\hat{E}(X) =$ `r round(E3_ar, 4)` e $\hat{V}(X) =$ `r round(V3_ar, 4)`, bem próximas dos valores exatos 0,5 e 0,05. O histograma dos aceitos acompanha a curva de $f(x)$.
+:::
+
+### Resposta 03.e) Taxas de aceitação e rejeição
+
+```{r Resposta 3e}
+#| collapse: true
+#| comment: ""
+
+tx_aceite <- N3 / total
+tx_rejeicao <- 1 - tx_aceite
+
+cat("Total de propostas:", total, "\n")
+cat("Taxa de aceitação observada:", round(tx_aceite, 4), "| teórica:", round(1 / M3, 4), "\n")
+cat("Taxa de rejeição observada:", round(tx_rejeicao, 4), "| teórica:", round(1 - 1 / M3, 4), "\n")
+```
+
+::: {.resposta}
+Foram necessárias `r fmt(total)` propostas para obter `r fmt(N3)` aceitos. A taxa de aceitação observada foi `r round(tx_aceite, 4)` e a de rejeição `r round(tx_rejeicao, 4)`, praticamente iguais às teóricas $\frac{1}{3}$ e $\frac{2}{3}$. Isso mostra que, quando o $M$ é maior do que o necessário, o algoritmo continua correto.
+:::
+
+::: {.pergunta}
+4. Existem três marcas de cerveja, designadas por A, B e C, de grande consumo. Um estudo de mercado revelou o seguinte comportamento dos consumidores de uma semana para a semana seguinte:
+
+Consumidores fiéis:
+
+- à marca A: 80%;
+- à marca B: 75%;
+- à marca C: 95%.
+
+Consumidores que mudam de marca:
+
+- entre os que consumiram B na semana anterior, 5% passam a consumir A;
+- entre os que consumiram C na semana anterior, 2% passam a consumir A;
+- entre os que consumiram A na semana anterior, 15% passam a consumir B;
+- entre os que consumiram C na semana anterior, 3% passam a consumir B;
+- entre os que consumiram A na semana anterior, 5% passam a consumir C;
+- entre os que consumiram B na semana anterior, 20% passam a consumir C.
+
+Considere que a escolha da marca ao longo das semanas pode ser representada por uma Cadeia de Markov.
+
+a) Determine a matriz de transição do processo, considerando a ordem dos estados A, B e C.
+
+b) Suponha que, na semana atual, 50% dos consumidores consumam a cerveja A, nenhum consumidor consuma a cerveja B e 50% consumam a cerveja C. Determine a distribuição percentual dos consumidores entre as três marcas na próxima semana.
+
+c) Utilizando o software R ou outra linguagem de programação, determine a distribuição estacionária da cadeia.
+
+d) Partindo da distribuição inicial apresentada no item (b), determine a primeira iteração em que a distribuição da cadeia pode ser considerada suficientemente próxima da distribuição estacionária, adotando o critério
+
+$$\max_j \left|\pi_j^{(t)} - \pi_j^*\right| < 10^{-6},$$
+
+em que $\pi_j^{(t)}$ é a distribuição na iteração t e $\pi_j^*$ é a distribuição estacionária.
+:::
+
+## Resposta 04
+
+### Resposta 04.a) Matriz de transição
+
+::: {.resposta}
+Cada linha representa a marca consumida na semana atual e cada coluna a marca da semana seguinte, com $p_{ij} = P(X_{t} = j \mid X_{t-1} = i)$:
+
+- Linha A: fica em A (80%), vai para B (15%), vai para C (5%)
+- Linha B: vai para A (5%), fica em B (75%), vai para C (20%)
+- Linha C: vai para A (2%), vai para B (3%), fica em C (95%)
+
+$$P = \begin{pmatrix} 0,80 & 0,15 & 0,05 \\ 0,05 & 0,75 & 0,20 \\ 0,02 & 0,03 & 0,95 \end{pmatrix}$$
+
+Conferindo que cada linha soma 1: $0,80 + 0,15 + 0,05 = 1$; $0,05 + 0,75 + 0,20 = 1$; $0,02 + 0,03 + 0,95 = 1$. $\checkmark$
+:::
+
+```{r Resposta 4a}
+#| collapse: true
+#| comment: ""
+
+P <- matrix(c(0.80, 0.15, 0.05,
+              0.05, 0.75, 0.20,
+              0.02, 0.03, 0.95),
+            nrow = 3, byrow = TRUE)
+rownames(P) <- colnames(P) <- c("A", "B", "C")
+
+P
+rowSums(P)
+```
+
+### Resposta 04.b) Distribuição na próxima semana
+
+::: {.resposta}
+A distribuição atual é $\pi^{(0)} = (0,50;\; 0;\; 0,50)$. Pela relação $\pi^{(1)} = \pi^{(0)} P$:
+
+$$\pi^{(1)}_A = 0,50 \times 0,80 + 0 \times 0,05 + 0,50 \times 0,02 = 0,40 + 0 + 0,01 = \mathbf{0,41}$$
+
+$$\pi^{(1)}_B = 0,50 \times 0,15 + 0 \times 0,75 + 0,50 \times 0,03 = 0,075 + 0 + 0,015 = \mathbf{0,09}$$
+
+$$\pi^{(1)}_C = 0,50 \times 0,05 + 0 \times 0,20 + 0,50 \times 0,95 = 0,025 + 0 + 0,475 = \mathbf{0,50}$$
+
+Na próxima semana, 41% dos consumidores estarão com a marca A, 9% com a B e 50% com a C ($0,41 + 0,09 + 0,50 = 1$).
+:::
+
+```{r Resposta 4b}
+#| collapse: true
+#| comment: ""
+
+pi0 <- c(A = 0.5, B = 0, C = 0.5)
+pi1 <- pi0 %*% P
+round(pi1 * 100, 2)
+```
+
+### Resposta 04.c) Distribuição estacionária
+
+::: {.resposta}
+A distribuição estacionária satisfaz $\pi^* = \pi^* P$ com $\pi_A^* + \pi_B^* + \pi_C^* = 1$. Escrevendo o sistema:
+
+$$\pi_A^* = 0,80\pi_A^* + 0,05\pi_B^* + 0,02\pi_C^*$$
+
+$$\pi_B^* = 0,15\pi_A^* + 0,75\pi_B^* + 0,03\pi_C^*$$
+
+$$\pi_A^* + \pi_B^* + \pi_C^* = 1$$
+
+Que é equivalente a $(P^\top - I)\,\pi^* = 0$, substituindo a última equação (redundante) pela restrição de soma 1, como feito no Módulo 5.
+:::
+
+```{r Resposta 4c}
+#| collapse: true
+#| comment: ""
+
+A_sist <- t(P) - diag(3)
+A_sist[3, ] <- c(1, 1, 1) # restrição: soma = 1
+b_sist <- c(0, 0, 1)
+
+pi_est <- solve(A_sist, b_sist)
+names(pi_est) <- colnames(P)
+
+round(pi_est, 6)
+
+# Verificação: pi* P deve ser igual a pi*
+round(as.numeric(pi_est %*% P), 6)
+```
+
+::: {.resposta}
+A distribuição estacionária é $\pi^* \approx$ (`r round(pi_est[1], 4)`; `r round(pi_est[2], 4)`; `r round(pi_est[3], 4)`). No longo prazo, cerca de `r round(pi_est[1]*100, 2)`% dos consumidores ficam com a marca A, `r round(pi_est[2]*100, 2)`% com a B e `r round(pi_est[3]*100, 2)`% com a C. A marca C domina o mercado por ter a maior fidelidade (95%).
+
+Esses valores correspondem às frações exatas $\pi^* = \left(\frac{13}{116};\; \frac{18}{116};\; \frac{85}{116}\right)$.
+:::
+
+### Resposta 04.d) Iteração de convergência
+
+```{r Resposta 4d}
+#| collapse: true
+#| comment: ""
+
+tol <- 1e-6
+pi_t <- pi0
+t_iter <- 0
+dist_max <- c()
+
+repeat {
+  t_iter <- t_iter + 1
+  pi_t <- pi_t %*% P
+  dist_max[t_iter] <- max(abs(pi_t - pi_est))
+  if (dist_max[t_iter] < tol) break
+}
+
+cat("Primeira iteração com max|pi(t) - pi*| < 1e-6: t =", t_iter, "\n")
+cat("Distância nessa iteração:", signif(dist_max[t_iter], 4), "\n")
+cat("Distância na iteração anterior:", signif(dist_max[t_iter - 1], 4), "\n")
+round(pi_t, 6)
+```
+
+```{r Resposta 4d grafico}
+#| fig-width: 7
+#| fig-height: 4.5
+
+plot(1:t_iter, dist_max, type = "l", lwd = 2, col = "violet", log = "y",
+     xlab = "Iteração (semana) t", ylab = "max |pi(t) - pi*| (escala log)",
+     main = "Convergência para a distribuição estacionária")
+abline(h = tol, lty = 2, col = "gray40")
+abline(v = t_iter, lty = 3, col = "gray40")
+```
+
+::: {.resposta}
+Partindo de $\pi^{(0)} = (0,5;\; 0;\; 0,5)$, a cadeia satisfaz o critério $\max_j |\pi_j^{(t)} - \pi_j^*| < 10^{-6}$ pela primeira vez na iteração **t = `r t_iter`**. No gráfico (escala log), a distância cai de forma praticamente linear, o que indica convergência geométrica para $\pi^*$.
+:::
+
+::: {.pergunta}
+5. Explique, em termos gerais, por que a convergência das cadeias MCMC (Markov chain Monte Carlo) é fundamental para que as amostras geradas possam ser utilizadas para fazer inferência sobre a distribuição a posteriori. Comente também o que pode acontecer quando a cadeia ainda não atingiu a região de equilíbrio.
+:::
+
+## Resposta 05
+
+::: {.resposta}
+A ideia central do MCMC é construir uma cadeia de Markov cuja **distribuição estacionária** seja exatamente a posteriori $\pi(\theta \mid y)$. Tal qual vimos no exercício 4, a distribuição da cadeia só se aproxima de $\pi^*$ depois de um certo número de iterações, ou seja, os primeiros valores ainda "lembram" o ponto de partida.
+
+Só depois da convergência é que cada valor gerado pode ser considerado uma amostra da posteriori. Nesse ponto, as médias, quantis e intervalos calculados com os valores da cadeia passam a estimar as quantidades da posteriori.
+
+Quando a cadeia ainda não atingiu a região de equilíbrio:
+
+- os valores ainda carregam a influência do **valor inicial**, e as estimativas ficam **viesadas** (por exemplo, a média fica puxada para o chute inicial);
+- a variabilidade pode ser subestimada ou superestimada, pois a cadeia pode estar presa em uma região do espaço paramétrico e não ter explorado toda a posteriori (por exemplo, apenas uma das modas de uma posteriori bimodal);
+- cadeias iniciadas em pontos diferentes dão resultados diferentes, sinal de que nenhuma delas representa a posteriori;
+- os intervalos de credibilidade e o HPD ficam incorretos, e as conclusões da análise ficam comprometidas.
+
+Por isso se deve usar o burn-in e os diagnósticos de convergência antes de usar as amostras.
+:::
+
+::: {.pergunta}
+6. Explique a importância do burn-in, do thinning (thin) e do tamanho efetivo da amostra (ESS) em uma análise MCMC, destacando o papel de cada um na qualidade das amostras geradas e na precisão das estimativas a posteriori.
+:::
+
+## Resposta 06
+
+::: {.resposta}
+**Burn-in:** é o descarte das primeiras iterações da cadeia, período em que ela ainda está "saindo" do valor inicial e caminhando para a região de equilíbrio. Descartar esse trecho evita o viés causado pelo valor inicial.
+
+**Thinning (thin):** é guardar apenas um valor a cada $k$ iterações, com o objetivo de reduzir a autocorrelação entre os valores armazenados e economizar memória. De qualquer maneira, de modo geral é preferível rodar mais iterações a fazer thinning.
+
+**Tamanho efetivo da amostra (ESS):** como os valores da cadeia são autocorrelacionados, $N$ valores dependentes carregam menos informação do que $N$ valores independentes. O ESS indica a quantos valores **independentes** a cadeia equivale. Pode-se ter um $N$ grande, mas com valores extremamente autocorrelacionados, o que daria um $ESS$ baixo. Essa cadeia seria menos informativa do que uma com $N$ menos, mas $ESS$ maior.
+:::
+
+::: {.pergunta}
+7. Considere duas cadeias MCMC para o mesmo parâmetro. A primeira apresenta alta autocorrelação entre valores consecutivos e ESS igual a 250. A segunda apresenta baixa autocorrelação e ESS igual a 2.500, embora ambas tenham o mesmo número total de iterações.
+
+a) Qual das cadeias apresenta melhor mistura? Justifique.
+
+b) Qual delas fornece maior quantidade de informação efetiva?
+
+c) Em qual cadeia se espera menor erro de Monte Carlo?
+
+d) Explique por que o número total de iterações, isoladamente, não é suficiente para avaliar a qualidade de uma cadeia MCMC.
+:::
+
+## Resposta 07
+
+### Resposta 07.a)
+
+::: {.resposta}
+A **segunda cadeia** tem melhor mistura. Baixa autocorrelação significa que a cadeia "anda" rapidamente pelo espaço paramétrico, isto é, valores consecutivos são pouco dependentes e ela percorre toda a posteriori em poucas iterações. Na primeira, a alta autocorrelação mostra que ela se move devagar, com passos pequenos ou muitas rejeições, e demora a explorar a posteriori.
+:::
+
+### Resposta 07.b)
+
+::: {.resposta}
+A **segunda cadeia**. Com o mesmo número de iterações, ela equivale a 2.500 valores independentes, contra apenas 250 da primeira, ou seja, 10 vezes mais informação efetiva.
+:::
+
+### Resposta 07.c)
+
+::: {.resposta}
+Na **segunda cadeia**. Considerando a mesma posteriori (mesmo $DP(\theta \mid y)$):
+
+$$\frac{MCSE_1}{MCSE_2} = \frac{DP/\sqrt{250}}{DP/\sqrt{2500}} = \sqrt{\frac{2500}{250}} = \sqrt{10} \approx 3,16$$
+
+O erro de Monte Carlo da primeira cadeia é cerca de 3,16 vezes maior que o da segunda.
+:::
+
+### Resposta 07.d)
+
+::: {.resposta}
+Porque o número de iterações não leva em conta a **dependência** entre os valores nem se a cadeia **convergiu**. Como vimos neste exercício, duas cadeias com o mesmo número de iterações podem ter quantidades de informação muito diferentes (ESS de 250 e de 2.500). Além disso, uma cadeia com muitas iterações pode:
+
+- ainda não ter convergido (por exemplo, valor inicial ruim e burn-in insuficiente);
+- estar presa em uma região da posteriori (por exemplo, em uma das modas);
+- ter alta autocorrelação, resultando em ESS baixo.
+
+Por isso, é necessário avaliar as demais métricas (autocorreção, ESS, diagnósticos de convergência e afins)
+:::
+
+::: {.pergunta}
+8. Compare os algoritmos Gibbs Sampler e Metropolis-Hastings, destacando:
+
+- como os novos valores dos parâmetros são gerados em cada método;
+- o papel das distribuições condicionais completas;
+- a existência ou não de etapa de aceitação/rejeição;
+- em quais situações cada algoritmo é mais apropriado.
+:::
+
+## Resposta 08
+
+::: {.resposta}
+| Aspecto | Gibbs Sampler | Metropolis-Hastings |
+|:--------|:--------------|:--------------------|
+| **Geração dos novos valores** | Cada parâmetro é sorteado, um de cada vez, diretamente da sua distribuição condicional completa, dados os valores mais recentes dos demais: $\theta_1^{(t)} \sim \pi(\theta_1 \mid \theta_2^{(t-1)}, \dots, y)$, depois $\theta_2^{(t)} \sim \pi(\theta_2 \mid \theta_1^{(t)}, \dots, y)$, e assim por diante. | Um valor candidato $\theta^*$ é gerado de uma distribuição proposta $q(\theta^* \mid \theta^{(t-1)})$ (por exemplo, um passeio aleatório Normal centrado no valor atual). |
+| **Condicionais completas** | São essenciais: é preciso conhecê-las e saber gerar valores delas (geralmente, famílias conhecidas obtidas por conjugação condicional). | Não são necessárias. Basta conhecer a posteriori **a menos de uma constante**, $\pi(\theta \mid y) \propto L(y \mid \theta)\pi(\theta)$, pois a constante se cancela na razão. |
+| **Aceitação/rejeição** | Não há: todo valor gerado é aceito (taxa de aceitação = 1). Ele pode ser visto como um caso particular do M-H em que a proposta é a própria condicional completa. | Há: o candidato é aceito com probabilidade $\alpha = \min\left\{1, \frac{\pi(\theta^* \mid y)\, q(\theta^{(t-1)} \mid \theta^*)}{\pi(\theta^{(t-1)} \mid y)\, q(\theta^* \mid \theta^{(t-1)})}\right\}$. Se rejeitado, a cadeia repete o valor anterior. |
+| **Quando usar** | Quando as condicionais completas são de famílias conhecidas (modelos conjugados ou condicionalmente conjugados, como o Normal com $\mu$ e $\sigma^2$ do Módulo 5). Pode ficar lento quando os parâmetros são muito correlacionados. | Quando as condicionais não têm forma conhecida, por exemplo, com prioris não conjugadas ou modelos não lineares. Exige calibrar a proposta: passos muito pequenos geram alta autocorrelação, e passos muito grandes geram muitas rejeições. |
+
+:::
+
+::: {.pergunta}
+9. Realize uma análise bayesiana completa para o modelo especificado abaixo, utilizando o software R em conjunto com OpenBUGS, JAGS ou Stan, ou outra linguagem/programa apropriado.
+
+Considere o seguinte modelo:
+
+$$Y \sim \text{Poisson}(\theta)$$
+
+com distribuição a priori
+
+$$\theta \sim \text{Gama}(shape, rate)$$
+
+Os dados observados são:
+
+$$y = (13, 16, 11, 8, 9, 10, 8, 9, 6, 10, 10, 5, 10, 14, 3, 10, 9, 10, 10, 16)$$
+
+Considere as seguintes situações:
+
+| Distribuição a priori pouco informativa | Distribuição a priori informativa |
+|:---:|:---:|
+| shape = 0,001 | shape = 100 |
+| rate = 0,001 | rate = 10 |
+
+Para cada situação, execute duas cadeias MCMC, utilizando valores iniciais distintos, e responda:
+
+a) Informe o número total de iterações, o período de burn-in/warm-up e, caso seja utilizado, o valor de thin. Justifique brevemente as escolhas realizadas.
+
+b) Informe os valores iniciais utilizados em cada uma das duas cadeias.
+
+c) Apresente os trace plots das duas cadeias e interprete seu comportamento quanto à estabilidade, mistura e exploração da distribuição a posteriori.
+
+d) Apresente os gráficos de autocorrelação das cadeias. Comente o grau de dependência entre as amostras e a velocidade de redução da autocorrelação ao longo dos lags.
+
+e) Avalie a convergência das cadeias utilizando os critérios de diagnóstico estudados na disciplina e interprete os resultados obtidos.
+
+f) Apresente o Tamanho Efetivo da Amostra (ESS) do parâmetro e interprete o resultado em relação ao número total de valores simulados.
+
+g) Obtenha as estimativas a posteriori do parâmetro, apresentando: média; mediana; variância; coeficiente de variação; intervalo de credibilidade de 95%; intervalo HPD de 95%.
+
+h) Apresente o gráfico da distribuição marginal a posteriori do parâmetro.
+
+i) Com base no gráfico e nas medidas obtidas anteriormente, discuta se a distribuição a posteriori apresenta simetria ou assimetria. Justifique sua conclusão.
+
+j) Compare os resultados obtidos com as duas distribuições a priori. Discuta a influência da escolha da priori sobre a distribuição a posteriori e sobre as estimativas do parâmetro.
+:::
+
+## Resposta 09
+
+### Posteriori analítica (para conferência)
+
+::: {.resposta}
+Antes de partir para o MCMC, vale lembrar que a Gama é conjugada da Poisson, então a posteriori exata é conhecida e servirá para conferir o resultado das cadeias.
+
+**Verossimilhança:**
+
+$$L(\theta \mid y) = \prod_{i=1}^n \frac{e^{-\theta}\theta^{y_i}}{y_i!} \propto \theta^{\sum y_i} e^{-n\theta}$$
+
+**Priori:**
+
+$$\pi(\theta) = \frac{b^a}{\Gamma(a)}\theta^{a-1}e^{-b\theta} \propto \theta^{a-1}e^{-b\theta}$$
+
+**Posteriori:**
+
+$$\pi(\theta \mid y) \propto \theta^{\sum y_i}e^{-n\theta} \times \theta^{a-1}e^{-b\theta} = \theta^{\left(\sum y_i + a\right) - 1}e^{-(n + b)\theta}$$
+
+$$\theta \mid y \sim \text{Gama}\left(\sum y_i + a, \; n + b\right)$$
+
+Com os dados: $n = 20$ e $\sum y_i = 13 + 16 + 11 + 8 + 9 + 10 + 8 + 9 + 6 + 10 + 10 + 5 + 10 + 14 + 3 + 10 + 9 + 10 + 10 + 16 = 197$ ($\bar{y} = 9,85$).
+
+- **Priori pouco informativa**, Gama(0,001; 0,001): $\theta \mid y \sim \text{Gama}(197,001;\; 20,001)$, com $E(\theta \mid y) = \frac{197,001}{20,001} \approx 9,8496$ e $V(\theta \mid y) = \frac{197,001}{20,001^2} \approx 0,4925$
+- **Priori informativa**, Gama(100; 10): $\theta \mid y \sim \text{Gama}(297;\; 30)$, com $E(\theta \mid y) = \frac{297}{30} = 9,9$ e $V(\theta \mid y) = \frac{297}{30^2} = 0,33$
+:::
+
+### Ajuste no Stan
+
+::: {.resposta}
+Escolhi o Stan, pois ele já está instalado na minha máquina, e o Módulo 5 trouxe o procedimento. O modelo segue a parametrização Gama(shape, rate), a mesma do R (`dgamma(x, shape, rate)`).
+:::
+
+```{r Resposta 9 modelo}
+#| collapse: true
+#| comment: ""
+
+y9 <- c(13, 16, 11, 8, 9, 10, 8, 9, 6, 10, 10, 5, 10, 14, 3, 10, 9, 10, 10, 16)
+
+modelo9_code <- "
+data {
+  int<lower=1> n;
+  array[n] int<lower=0> y;
+  real<lower=0> shape;
+  real<lower=0> rate;
+}
+parameters {
+  real<lower=0> theta;
+}
+model {
+  // Priori
+  theta ~ gamma(shape, rate);
+  // Verossimilhança
+  y ~ poisson(theta);
+}
+"
+
+modelo9 <- stan_model(model_code = modelo9_code)
+
+# Configurações das cadeias (iguais para as duas prioris)
+n_cadeias <- 2
+n_iter <- 11000   # iterações totais por cadeia
+n_warmup <- 1000  # warm-up (burn-in) por cadeia
+n_thin <- 1       # sem thinning
+inits9 <- list(list(theta = 1), list(theta = 25))
+
+ajustar9 <- function(shape, rate) {
+  sampling(
+    object = modelo9,
+    data = list(n = length(y9), y = y9, shape = shape, rate = rate),
+    chains = n_cadeias, iter = n_iter, warmup = n_warmup, thin = n_thin,
+    init = inits9, seed = 1234, refresh = 0
+  )
+}
+
+fit_pi <- ajustar9(shape = 0.001, rate = 0.001) # pouco informativa
+fit_inf <- ajustar9(shape = 100, rate = 10)     # informativa
+
+# Objetos coda (sem o warm-up)
+mcmc_pi <- As.mcmc.list(fit_pi, pars = "theta")
+mcmc_inf <- As.mcmc.list(fit_inf, pars = "theta")
+
+print(fit_pi, pars = "theta", probs = c(0.025, 0.5, 0.975))
+print(fit_inf, pars = "theta", probs = c(0.025, 0.5, 0.975))
+```
+
+### Resposta 09.a) Iterações, warm-up e thin
+
+::: {.resposta}
+Para as duas prioris usei:
+
+- **Iterações totais:** `r fmt(n_iter)` por cadeia, totalizando `r fmt(n_iter * n_cadeias)` iterações;
+- **Warm-up (burn-in):** `r fmt(n_warmup)` por cadeia. No Stan, essa fase também serve para adaptar o tamanho do passo e a matriz de massa do NUTS;
+- **Thin:** `r n_thin`, ou seja, sem thinning;
+- **Amostras finais:** $(`r fmt(n_iter)` - `r fmt(n_warmup)`) \times `r n_cadeias` =$ `r fmt((n_iter - n_warmup) * n_cadeias)` valores.
+
+Justificativa: o modelo tem apenas um parâmetro e a posteriori é unimodal e bem comportada, então o NUTS converge rápido. 1.000 iterações de warm-up são mais do que suficientes para a cadeia sair dos valores iniciais (que escolhi propositalmente longe da posteriori) e para a adaptação do algoritmo. As 10.000 iterações pós-warm-up por cadeia garantem um ESS alto (ver item f) e atendem ao número mínimo sugerido pelo diagnóstico de Raftery-Lewis (item e), que, num primeiro teste com 5.000 iterações por cadeia, pediu entre 6.000 e 8.300 iterações. Não usei thinning porque a autocorrelação cai rapidamente (item d), e, como visto no Módulo 5, descartar valores só reduziria a informação.
+:::
+
+### Resposta 09.b) Valores iniciais
+
+::: {.resposta}
+| Cadeia | Valor inicial de $\theta$ | Justificativa |
+|:---:|:---:|:---|
+| 1 | 1 | bem abaixo de $\bar{y} = 9,85$ |
+| 2 | 25 | bem acima de $\bar{y} = 9,85$ |
+
+Os mesmos valores iniciais foram usados nas duas situações de priori. Escolhi valores dispersos, em lados opostos da posteriori, para que o diagnóstico de Gelman-Rubin tenha sentido: se as cadeias partem de pontos distantes e chegam à mesma região, há evidência de convergência.
+:::
+
+### Resposta 09.c) Trace plots
+
+```{r Resposta 9c}
+#| fig-width: 10
+#| fig-height: 4.5
+
+par(mfrow = c(1, 2))
+coda::traceplot(mcmc_pi, col = c("violet", "steelblue"),
+                main = "Priori pouco informativa - Gama(0,001; 0,001)", ylab = expression(theta))
+coda::traceplot(mcmc_inf, col = c("violet", "steelblue"),
+                main = "Priori informativa - Gama(100; 10)", ylab = expression(theta))
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 9c warmup}
+#| fig-width: 10
+#| fig-height: 4.5
+
+# Primeiras 200 iterações INCLUINDO o warm-up, para ver a saída dos valores iniciais
+trace_warmup <- function(fit, titulo) {
+  arr <- rstan::extract(fit, pars = "theta", permuted = FALSE, inc_warmup = TRUE)
+  # O Stan não guarda o valor inicial junto com os sorteios: incluo como iteração 0
+  cadeias <- rbind(c(1, 25), arr[1:200, , 1])
+  matplot(0:200, cadeias, type = "l", lty = 1, lwd = 1.5,
+          col = c("violet", "steelblue"), xlab = "Iteração (warm-up)",
+          ylab = expression(theta), main = titulo)
+  legend("topright", legend = c("Cadeia 1 (início = 1)", "Cadeia 2 (início = 25)"),
+         col = c("violet", "steelblue"), lty = 1, bty = "n")
+}
+
+par(mfrow = c(1, 2))
+trace_warmup(fit_pi, "Início do warm-up - pouco informativa")
+trace_warmup(fit_inf, "Início do warm-up - informativa")
+par(mfrow = c(1, 1))
+```
+
+::: {.resposta}
+No segundo gráfico, dá para ver que as duas cadeias saem dos valores iniciais (1 e 25) e chegam à região de $\theta \approx 10$ logo nas primeiras iterações do warm-up. Depois do warm-up (primeiro gráfico), nas duas situações de priori:
+
+- **Estabilidade:** as cadeias oscilam em torno de um mesmo valor central (≈ 9,8 a 9,9), sem tendência de subida ou descida;
+- **Mistura:** as duas cadeias se sobrepõem completamente, aparecem como uma "faixa" densa, sem trechos em que uma cadeia fica parada ou presa;
+- **Exploração:** elas percorrem toda a amplitude da posteriori várias vezes, indo e voltando às caudas.
+
+Também é possível perceber que a faixa da priori informativa é um pouco mais estreita, já que a posteriori tem variância menor.
+:::
+
+### Resposta 09.d) Autocorrelação
+
+```{r Resposta 9d}
+#| fig-width: 10
+#| fig-height: 7
+
+par(mfrow = c(2, 2))
+acf(as.numeric(mcmc_pi[[1]]), lag.max = 30, main = "Pouco informativa - Cadeia 1")
+acf(as.numeric(mcmc_pi[[2]]), lag.max = 30, main = "Pouco informativa - Cadeia 2")
+acf(as.numeric(mcmc_inf[[1]]), lag.max = 30, main = "Informativa - Cadeia 1")
+acf(as.numeric(mcmc_inf[[2]]), lag.max = 30, main = "Informativa - Cadeia 2")
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 9d tabela}
+#| collapse: true
+#| comment: ""
+
+autocorr.diag(mcmc_pi, lags = c(1, 2, 5, 10))
+autocorr.diag(mcmc_inf, lags = c(1, 2, 5, 10))
+```
+
+::: {.resposta}
+A autocorrelação no lag 1 é moderada (≈ `r round(autocorr.diag(mcmc_pi, lags = 1)[1], 2)` na pouco informativa e ≈ `r round(autocorr.diag(mcmc_inf, lags = 1)[1], 2)` na informativa), mas cai rapidamente: a partir do lag 3 a 5, os valores já ficam dentro das bandas de significância (linhas tracejadas), ou seja, praticamente zero. Isso mostra que a dependência entre as amostras é fraca e de curta duração, o que confirma que não há necessidade de thinning.
+:::
+
+### Resposta 09.e) Diagnósticos de convergência
+
+```{r Resposta 9e}
+#| collapse: true
+#| comment: ""
+
+diagnosticos <- function(fit, ml) {
+  sp <- get_sampler_params(fit, inc_warmup = FALSE)
+  cat("--- R-hat (Stan):", round(summary(fit, pars = "theta")$summary[, "Rhat"], 4), "\n")
+  cat("--- Divergências:", sum(sapply(sp, function(x) sum(x[, "divergent__"]))), "\n\n")
+  cat("--- Gelman-Rubin\n");         print(gelman.diag(ml))
+  cat("--- Geweke (escores Z)\n");   print(sapply(geweke.diag(ml), function(g) g$z))
+  cat("\n--- Heidelberger-Welch\n"); print(heidel.diag(ml))
+  cat("--- Raftery-Lewis\n");        print(raftery.diag(ml))
+}
+
+# Escores Z do Geweke guardados para o texto
+gw_pi <- sapply(geweke.diag(mcmc_pi), function(g) g$z)
+gw_inf <- sapply(geweke.diag(mcmc_inf), function(g) g$z)
+
+cat("========== PRIORI POUCO INFORMATIVA ==========\n")
+diagnosticos(fit_pi, mcmc_pi)
+
+cat("\n========== PRIORI INFORMATIVA ==========\n")
+diagnosticos(fit_inf, mcmc_inf)
+```
+
+::: {.resposta}
+Interpretando cada critério (os resultados foram semelhantes para as duas prioris):
+
+- **Gelman-Rubin ($\hat{R}$):** compara a variância entre cadeias com a variância dentro das cadeias. Os valores ficaram em `r round(gelman.diag(mcmc_pi)$psrf[1], 3)` (pouco informativa) e `r round(gelman.diag(mcmc_inf)$psrf[1], 3)` (informativa), com limite superior ≤ 1,01, ou seja, abaixo de 1,1 (ou do critério mais rígido, 1,01). As duas cadeias, mesmo partindo de 1 e 25, convergiram para a mesma distribuição.
+- **Geweke:** compara a média dos primeiros 10% com a dos últimos 50% de cada cadeia; se $|Z| > 1,96$, há indício de que a cadeia não está estacionária. Na cadeia 1, os escores ficaram dentro do intervalo, mas na cadeia 2 eles ficaram fora: Z = `r round(gw_pi[2], 2)` (pouco informativa) e Z = `r round(gw_inf[2], 2)` (informativa). Esse resultado é discutido logo abaixo.
+- **Heidelberger-Welch:** todas as cadeias passaram no teste de estacionariedade e no teste de meia-amplitude (halfwidth), indicando que a média está estimada com precisão suficiente.
+- **Raftery-Lewis:** para estimar o quantil 0,025 com precisão de ± 0,005, o burn-in sugerido (M) é de poucas iterações e o número total sugerido (N) é menor que as 10.000 iterações usadas por cadeia. O fator de dependência (I) ficou abaixo de 5, o que indica baixa autocorrelação.
+- **Diagnósticos do NUTS:** zero divergências, então não houve problemas numéricos nas trajetórias Hamiltonianas.
+
+Como o Geweke acusou a cadeia 2, fui verificar o tamanho dessa diferença entre o início e o fim da cadeia:
+:::
+
+```{r Resposta 9e geweke}
+#| collapse: true
+#| comment: ""
+
+# Médias das janelas usadas pelo Geweke (10% iniciais e 50% finais) em cada cadeia
+janelas_geweke <- function(ml) {
+  t(sapply(seq_along(ml), function(j) {
+    x <- as.numeric(ml[[j]])
+    n <- length(x)
+    inicio <- mean(x[1:floor(0.1 * n)])
+    final <- mean(x[(floor(0.5 * n) + 1):n])
+    c(Cadeia = j, Media_10_inicio = inicio, Media_50_final = final,
+      Diferenca = inicio - final, Dif_em_DP_post = (inicio - final) / sd(unlist(ml)))
+  }))
+}
+
+kable(janelas_geweke(mcmc_pi), digits = 4, caption = "Priori pouco informativa")
+kable(janelas_geweke(mcmc_inf), digits = 4, caption = "Priori informativa")
+```
+
+::: {.resposta}
+Na cadeia 2, a média dos 10% iniciais ficou entre 0,08 e 0,13 abaixo da média dos 50% finais, o que equivale a menos de 20% do desvio-padrão da posteriori (coluna `Dif_em_DP_post`). O teste acusa porque, com milhares de valores, mesmo diferenças pequenas ficam "significativas", e ele tem 5% de chance de rejeitar mesmo quando a cadeia está estacionária. Além disso, as duas cadeias 2 usam a mesma semente, então os dois alarmes não são independentes entre si.
+
+Considerando que o Gelman-Rubin, o Heidelberger-Welch (que também testa a estacionariedade, e passou em todas as cadeias) e a comparação com a posteriori exata (item g) não indicam problema, interpreto o resultado do Geweke como um falso alarme, e não como falta de convergência. Mesmo assim, é um bom exemplo de que nenhum diagnóstico deve ser olhado isoladamente.
+
+Conclusão: há evidência de convergência nas duas situações, e as amostras podem ser usadas para inferência.
+:::
+
+### Resposta 09.f) Tamanho Efetivo da Amostra (ESS)
+
+```{r Resposta 9f}
+#| collapse: true
+#| comment: ""
+
+n_total <- (n_iter - n_warmup) * n_cadeias
+
+ess_pi <- effectiveSize(mcmc_pi)
+ess_inf <- effectiveSize(mcmc_inf)
+
+mcse_pi <- sd(as.matrix(mcmc_pi)) / sqrt(ess_pi)
+mcse_inf <- sd(as.matrix(mcmc_inf)) / sqrt(ess_inf)
+
+kable(data.frame(
+  Priori = c("Pouco informativa", "Informativa"),
+  N_total = n_total,
+  ESS = c(ess_pi, ess_inf),
+  ESS_relativo = c(ess_pi, ess_inf) / n_total,
+  MCSE = c(mcse_pi, mcse_inf)
+), digits = 4)
+```
+
+::: {.resposta}
+Dos `r fmt(n_total)` valores simulados, o ESS foi de `r round(ess_pi)` (pouco informativa) e `r round(ess_inf)` (informativa), ou seja, cerca de `r round(100 * ess_pi / n_total)`% e `r round(100 * ess_inf / n_total)`% do total. A perda em relação a $N$ vem da autocorrelação moderada do lag 1, mas o ESS ainda é bem alto. Com isso, o erro padrão de Monte Carlo da média ficou em torno de `r round(mcse_pi, 4)`, muito pequeno em relação ao desvio-padrão da posteriori. A precisão é mais do que suficiente para estimar médias, quantis e intervalos.
+:::
+
+### Resposta 09.g) Estimativas a posteriori
+
+```{r Resposta 9g}
+#| collapse: true
+#| comment: ""
+
+resumo_post <- function(amostras) {
+  ic <- quantile(amostras, c(0.025, 0.975))
+  hpd <- hdi(amostras, credMass = 0.95)
+  c(Media = mean(amostras),
+    Mediana = median(amostras),
+    Variancia = var(amostras),
+    CV_perc = 100 * sd(amostras) / mean(amostras),
+    IC_inf = unname(ic[1]), IC_sup = unname(ic[2]),
+    HPD_inf = unname(hpd[1]), HPD_sup = unname(hpd[2]))
+}
+
+theta_pi <- as.numeric(as.matrix(mcmc_pi))
+theta_inf <- as.numeric(as.matrix(mcmc_inf))
+
+res_pi <- resumo_post(theta_pi)
+res_inf <- resumo_post(theta_inf)
+
+# Valores exatos das posterioris conjugadas, para conferência
+exato9 <- function(sh, rt) c(Media = sh / rt, Mediana = qgamma(0.5, sh, rt), Variancia = sh / rt^2,
+                             CV_perc = 100 / sqrt(sh), IC_inf = qgamma(0.025, sh, rt),
+                             IC_sup = qgamma(0.975, sh, rt),
+                             HPD_inf = hdi(qgamma, 0.95, shape = sh, rate = rt)[1],
+                             HPD_sup = hdi(qgamma, 0.95, shape = sh, rate = rt)[2])
+
+tabela9 <- rbind(
+  "MCMC - pouco informativa" = res_pi,
+  "Exato - Gama(197,001; 20,001)" = exato9(0.001 + sum(y9), 0.001 + length(y9)),
+  "MCMC - informativa" = res_inf,
+  "Exato - Gama(297; 30)" = exato9(100 + sum(y9), 10 + length(y9))
+)
+kable(tabela9, digits = 4)
+```
+
+::: {.resposta}
+| Medida | Pouco informativa | Informativa |
+|:---|:---:|:---:|
+| Média | `r round(res_pi["Media"], 4)` | `r round(res_inf["Media"], 4)` |
+| Mediana | `r round(res_pi["Mediana"], 4)` | `r round(res_inf["Mediana"], 4)` |
+| Variância | `r round(res_pi["Variancia"], 4)` | `r round(res_inf["Variancia"], 4)` |
+| Coeficiente de variação | `r round(res_pi["CV_perc"], 2)`% | `r round(res_inf["CV_perc"], 2)`% |
+| IC 95% | [`r round(res_pi["IC_inf"], 3)`; `r round(res_pi["IC_sup"], 3)`] | [`r round(res_inf["IC_inf"], 3)`; `r round(res_inf["IC_sup"], 3)`] |
+| HPD 95% | [`r round(res_pi["HPD_inf"], 3)`; `r round(res_pi["HPD_sup"], 3)`] | [`r round(res_inf["HPD_inf"], 3)`; `r round(res_inf["HPD_sup"], 3)`] |
+
+As estimativas do MCMC ficaram muito próximas das obtidas analiticamente pela posteriori conjugada, o que valida a simulação.
+:::
+
+### Resposta 09.h) Distribuição marginal a posteriori
+
+```{r Resposta 9h}
+#| fig-width: 10
+#| fig-height: 4.5
+
+grafico_post <- function(amostras, sh, rt, titulo, res) {
+  hist(amostras, breaks = 50, probability = TRUE, col = adjustcolor("pink", alpha.f = 0.7),
+       border = "white", main = titulo, xlab = expression(theta),
+       ylab = "Densidade a posteriori", xlim = c(7, 13), ylim = c(0, 0.75))
+  lines(density(amostras), lwd = 2, col = "violet")
+  curve(dgamma(x, shape = sh, rate = rt), add = TRUE, lwd = 2, lty = 2, col = "gray30")
+  abline(v = res[c("HPD_inf", "HPD_sup")], lty = 3, col = "steelblue", lwd = 1.5)
+  abline(v = res["Media"], lty = 2, col = "firebrick3")
+  legend("topright", legend = c("MCMC (kernel)", "Posteriori exata", "HPD 95%", "Média"),
+         col = c("violet", "gray30", "steelblue", "firebrick3"), lty = c(1, 2, 3, 2),
+         lwd = 2, bty = "n", cex = 0.8)
+}
+
+par(mfrow = c(1, 2))
+grafico_post(theta_pi, 197.001, 20.001, "Pouco informativa", res_pi)
+grafico_post(theta_inf, 297, 30, "Informativa", res_inf)
+par(mfrow = c(1, 1))
+```
+
+### Resposta 09.i) Simetria ou assimetria
+
+::: {.resposta}
+As duas posterioris são **aproximadamente simétricas**, com uma **leve assimetria à direita**. Os argumentos:
+
+- **Gráfico:** a forma é de sino, bem parecida com uma Normal centrada em ≈ 9,85 a 9,9;
+- **Média e mediana** quase iguais: `r round(res_pi["Media"], 4)` e `r round(res_pi["Mediana"], 4)` (pouco informativa); `r round(res_inf["Media"], 4)` e `r round(res_inf["Mediana"], 4)` (informativa). A média ligeiramente maior que a mediana indica a cauda direita um pouco mais longa;
+- **IC e HPD** quase coincidentes. Em uma distribuição perfeitamente simétrica, eles seriam iguais. O HPD aparece levemente deslocado para a esquerda em relação ao IC de caudas iguais (como vimos na Lista 4 para a Gama);
+- **Teoricamente**, a assimetria da Gama é $\frac{2}{\sqrt{\text{shape}}}$: $\frac{2}{\sqrt{197}} \approx 0,14$ e $\frac{2}{\sqrt{297}} \approx 0,12$, valores pequenos e positivos.
+
+Como o shape da posteriori é grande (muitos dados: $\sum y_i = 197$), a Gama se aproxima da Normal, e a assimetria é quase imperceptível.
+:::
+
+### Resposta 09.j) Comparação entre as prioris
+
+```{r Resposta 9j}
+#| fig-width: 8
+#| fig-height: 4.5
+
+curve(dgamma(x, 100, 10), from = 5, to = 15, n = 500, lwd = 2, lty = 2, col = "royalblue3",
+      xlab = expression(theta), ylab = "Densidade", ylim = c(0, 0.75),
+      main = "Priori informativa x posterioris")
+curve(dgamma(x, 0.001, 0.001) * 50, add = TRUE, lwd = 2, lty = 3, col = "gray50") # escala ampliada
+lines(density(theta_pi), lwd = 2, col = "violet")
+lines(density(theta_inf), lwd = 2, col = "firebrick3")
+abline(v = mean(y9), lty = 3)
+legend("topright", legend = c("Priori Gama(100; 10)", "Priori Gama(0,001; 0,001) (x50)",
+                              "Posteriori - pouco informativa", "Posteriori - informativa",
+                              "Média amostral"),
+       col = c("royalblue3", "gray50", "violet", "firebrick3", "black"),
+       lty = c(2, 3, 1, 1, 3), lwd = 2, bty = "n", cex = 0.8)
+```
+
+::: {.resposta}
+**Priori pouco informativa**, Gama(0,001; 0,001): tem média $\frac{0,001}{0,001} = 1$, mas variância enorme ($\frac{0,001}{0,001^2} = 1000$), sendo praticamente plana na região de interesse. Os hiperparâmetros somam quase nada aos dados ($197 + 0,001$ e $20 + 0,001$), então a posteriori é praticamente a verossimilhança normalizada: a média a posteriori (`r round(res_pi["Media"], 3)`) ≈ $\bar{y} = 9,85$.
+
+**Priori informativa**, Gama(100; 10): tem média $\frac{100}{10} = 10$ e variância $\frac{100}{10^2} = 1$. Ela equivale a ter observado **10 observações anteriores** (rate = 10) somando 100 (shape = 100). A média a posteriori é uma média ponderada entre a média a priori e a média amostral:
+
+$$E(\theta \mid y) = \frac{a + \sum y_i}{b + n} = \underbrace{\frac{b}{b + n}}_{10/30}\cdot\frac{a}{b} + \underbrace{\frac{n}{b + n}}_{20/30}\cdot\bar{y} = \frac{1}{3}(10) + \frac{2}{3}(9,85) = 9,9$$
+
+Os dados têm peso de 2/3 e a priori de 1/3. Como a priori estava centrada em 10, perto de $\bar{y}$, ela não "puxou" muito a estimativa (9,85 → 9,9). O efeito maior foi na **incerteza**: a variância caiu de `r round(res_pi["Variancia"], 3)` para `r round(res_inf["Variancia"], 3)` (≈ `r round(100 * (1 - res_inf["Variancia"] / res_pi["Variancia"]))`% menor), e o HPD ficou mais estreito (amplitude `r round(res_pi["HPD_sup"] - res_pi["HPD_inf"], 3)` contra `r round(res_inf["HPD_sup"] - res_inf["HPD_inf"], 3)`).
+
+Em resumo: com $n = 20$, os dados dominam a posteriori nas duas situações, mas a priori informativa adiciona informação equivalente a 10 observações e aumenta a precisão. Se a priori informativa estivesse centrada longe de $\bar{y}$, ela deslocaria a estimativa, o que mostra a importância de justificar bem a escolha da priori.
+:::
+
+::: {.pergunta}
+10. Neste exercício, utilize a variável aleatória Y escolhida nas listas anteriores e proponha um modelo bayesiano em que pelo menos uma das distribuições a priori seja não conjugada à verossimilhança. Realize a análise bayesiana utilizando métodos MCMC e responda:
+
+a. Especifique as distribuições a priori atribuídas aos parâmetros, identificando qual delas é não conjugada e justificando as escolhas realizadas.
+
+b. Apresente a formulação do modelo no software, pacote ou linguagem de programação utilizado.
+
+c. Informe o número total de iterações, o período de burn-in/warm-up e, caso seja utilizado, o thinning. Justifique as escolhas realizadas.
+
+d. Informe os valores iniciais utilizados para os parâmetros em cada cadeia.
+
+e. Apresente os trace plots das cadeias e discuta seu comportamento quanto à estabilidade, mistura e exploração da distribuição a posteriori.
+
+f. Apresente os gráficos das cadeias (traceplot).
+
+g. Apresente os gráficos de autocorrelação das cadeias e interprete os resultados.
+
+h. Avalie a convergência das cadeias utilizando os critérios estudados na disciplina e interprete os resultados obtidos.
+
+i. Apresente o Tamanho Efetivo da Amostra (ESS) dos parâmetros e interprete os resultados.
+
+k) Obtenha as estimativas a posteriori do parâmetro, apresentando: média; mediana; variância; coeficiente de variação; intervalo de credibilidade de 95%; intervalo HPD de 95%.
+
+j. Apresente os gráficos das distribuições marginais a posteriori dos parâmetros.
+
+k. Comente sobre a forma das distribuições marginais a posteriori, incluindo a presença de simetria ou assimetria, quando pertinente.
+
+l. Explique por que, no modelo proposto, a escolha da priori não conjugada torna a obtenção analítica da distribuição a posteriori mais difícil e justifique o uso de métodos MCMC.
+:::
+
+## Resposta 10
+
+::: {.resposta}
+Primeiramente, uma recapitulação da variável escolhida nas listas anteriores.
+:::
+
+::: {.callout-note}
+### Contexto da Pesquisa (Exercício 15 da Lista I e Questão 5 da Lista III)
+
+* **Variável Aleatória ($Y_i$):** Número de locos marcadores do tipo SNP em homozigose num painel de $m = 50$ marcadores bialélicos independentes avaliados no $i$-ésimo indivíduo de uma população sob melhoramento.
+* **Modelo dos Dados:** $Y_i \mid p \overset{\text{i.i.d.}}{\sim} \text{Binomial}(m = 50, \, p)$ para $i = 1, \dots, n$.
+* **Parâmetro de Interesse:** $p \in (0, 1)$, que representa a probabilidade de homozigose por loco genômico.
+* **Priori conjugada usada na Lista III:** $p \sim \text{Beta}(11, 9)$.
+:::
+
+```{r Resposta 10 dados}
+#| collapse: true
+#| comment: ""
+
+# Mesma simulação da Lista I (Resposta 15l)
+set.seed(50)
+N_sim <- 1000
+n_par <- 50
+p_par <- 0.60
+amostra_sim <- rbinom(n = N_sim, size = n_par, prob = p_par)
+
+soma_y10 <- sum(amostra_sim)
+cat("n =", N_sim, "| m =", n_par, "| soma y =", soma_y10,
+    "| p chapéu =", round(soma_y10 / (N_sim * n_par), 4), "\n")
+```
+
+### Resposta 10.a) Distribuição a priori não conjugada
+
+::: {.resposta}
+Na Lista III usei a priori conjugada $p \sim \text{Beta}(11, 9)$. Agora, em vez de colocar a priori diretamente em $p$, vou trabalhar na escala logit, que é muito usada em genética e em modelos lineares generalizados:
+
+$$\eta = \text{logit}(p) = \log\left(\frac{p}{1 - p}\right) \quad \Longleftrightarrow \quad p = \frac{e^{\eta}}{1 + e^{\eta}}$$
+
+**Priori não conjugada:**
+
+$$\eta \sim N(\mu_0, \sigma_0^2) \quad \Longleftrightarrow \quad p \sim \text{Logit-Normal}(\mu_0, \sigma_0^2)$$
+
+Essa priori **não é conjugada** à Binomial: a verossimilhança é escrita em $p = \frac{e^\eta}{1 + e^\eta}$, e o produto com o núcleo Normal em $\eta$ não resulta em nenhuma família conhecida (ver item l).
+
+**Justificativas:**
+
+- $\eta$ pode assumir qualquer valor real, então a Normal é natural para ele, e a transformação logit garante que $p$ continue no intervalo $(0, 1)$ (preserva o espaço paramétrico);
+- na escala logit, o efeito de outros fatores (por exemplo, geração de autofecundação ou linhagem) poderia ser adicionado de forma linear, o que facilitaria ampliar o modelo depois.
+
+**Definição dos hiperparâmetros:** para manter a mesma informação a priori da Lista III (média de endogamia ≈ 0,55, que havia sido justificada com base no histórico da população), escolhi $\mu_0$ e $\sigma_0$ de modo que a Logit-Normal tenha a mesma média e variância que a Beta(11, 9) teria **na escala logit**. Se $p \sim \text{Beta}(a, b)$, então:
+
+$$E[\text{logit}(p)] = \psi(a) - \psi(b) \qquad V[\text{logit}(p)] = \psi'(a) + \psi'(b)$$
+
+em que $\psi$ é a função digama e $\psi'$ a trigama. Com $a = 11$ e $b = 9$:
+
+$$\mu_0 = \psi(11) - \psi(9) = \frac{1}{9} + \frac{1}{10} \approx 0,2111$$
+
+$$\sigma_0^2 = \psi'(11) + \psi'(9) \approx 0,0952 + 0,1175 = 0,2127 \implies \sigma_0 \approx 0,4612$$
+
+Portanto:
+
+$$\boxed{\eta = \text{logit}(p) \sim N(0,2111;\; 0,4612^2)}$$
+:::
+
+```{r Resposta 10a}
+#| fig-width: 10
+#| fig-height: 4.5
+
+mu0 <- digamma(11) - digamma(9)
+sigma0 <- sqrt(trigamma(11) + trigamma(9))
+cat("mu0 =", round(mu0, 4), "| sigma0 =", round(sigma0, 4), "\n")
+
+# Densidade da Logit-Normal na escala de p (mudança de variável: |d eta / dp| = 1 / (p(1-p)))
+d_logitnorm <- function(p, mu, s) dnorm(qlogis(p), mu, s) / (p * (1 - p))
+
+par(mfrow = c(1, 2))
+curve(dnorm(x, mu0, sigma0), from = -1.5, to = 2, lwd = 2, col = "royalblue3",
+      xlab = expression(eta == logit(p)), ylab = "Densidade", main = "Priori em eta: N(0,211; 0,461²)")
+curve(d_logitnorm(x, mu0, sigma0), from = 0.001, to = 0.999, n = 500, lwd = 2, col = "royalblue3",
+      xlab = "p", ylab = "Densidade", main = "Priori induzida em p")
+curve(dbeta(x, 11, 9), add = TRUE, lwd = 2, lty = 2, col = "gray40")
+legend("topleft", legend = c("Logit-Normal (não conjugada)", "Beta(11, 9) (Lista III)"),
+       col = c("royalblue3", "gray40"), lty = c(1, 2), lwd = 2, bty = "n", cex = 0.8)
+par(mfrow = c(1, 1))
+```
+
+::: {.resposta}
+O gráfico da direita mostra que a priori induzida em $p$ é quase idêntica à Beta(11, 9) da Lista III. Ou seja, mantive a mesma "crença" a priori, mudando apenas a forma funcional, que agora é não conjugada.
+:::
+
+### Resposta 10.b) Formulação do modelo no Stan
+
+::: {.resposta}
+O modelo completo é:
+
+$$Y_i \mid \eta \sim \text{Binomial}\left(50,\; p = \frac{e^\eta}{1 + e^\eta}\right), \quad i = 1, \dots, 1000$$
+
+$$\eta \sim N(0,2111;\; 0,4612^2)$$
+
+No Stan, a função `binomial_logit` recebe diretamente o $\eta$ (escala logit), o que é numericamente mais estável. O $p$ é calculado como quantidade transformada.
+:::
+
+```{r Resposta 10b}
+#| collapse: true
+#| comment: ""
+
+modelo10_code <- "
+data {
+  int<lower=1> n;                    // número de indivíduos
+  int<lower=1> m;                    // número de locos no painel
+  array[n] int<lower=0, upper=m> y;  // locos em homozigose por indivíduo
+  real mu0;                          // média da priori de eta
+  real<lower=0> sigma0;              // desvio-padrão da priori de eta
+}
+parameters {
+  real eta;                          // logit(p)
+}
+transformed parameters {
+  real<lower=0, upper=1> p = inv_logit(eta);
+}
+model {
+  // Priori não conjugada: logit(p) ~ Normal
+  eta ~ normal(mu0, sigma0);
+  // Verossimilhança Binomial na escala logit
+  y ~ binomial_logit(m, eta);
+}
+"
+
+modelo10 <- stan_model(model_code = modelo10_code)
+```
+
+### Resposta 10.c) Iterações, warm-up e thinning
+
+```{r Resposta 10c}
+#| collapse: true
+#| comment: ""
+
+n_iter10 <- 11000
+n_warmup10 <- 1000
+n_thin10 <- 1
+inits10 <- list(list(eta = -2), list(eta = 2))
+
+fit10 <- sampling(
+  object = modelo10,
+  data = list(n = N_sim, m = n_par, y = amostra_sim, mu0 = mu0, sigma0 = sigma0),
+  chains = 2, iter = n_iter10, warmup = n_warmup10, thin = n_thin10,
+  init = inits10, seed = 1234, refresh = 0
+)
+
+mcmc10 <- As.mcmc.list(fit10, pars = c("eta", "p"))
+
+print(fit10, pars = c("eta", "p"), probs = c(0.025, 0.5, 0.975), digits = 4)
+```
+
+::: {.resposta}
+- **Iterações totais:** `r fmt(n_iter10)` por cadeia (2 cadeias, `r fmt(2 * n_iter10)` no total);
+- **Warm-up:** `r fmt(n_warmup10)` por cadeia;
+- **Thinning:** `r n_thin10` (sem thinning);
+- **Amostras finais:** $(`r fmt(n_iter10)` - `r fmt(n_warmup10)`) \times 2 =$ `r fmt(2 * (n_iter10 - n_warmup10))`.
+
+Justificativa: tal qual no exercício 9, o modelo tem um único parâmetro e a posteriori é unimodal. Como $n \times m = 50.000$ ensaios, ela é muito concentrada, mas o NUTS adapta o tamanho do passo durante o warm-up, e 1.000 iterações são suficientes para isso e para sair dos valores iniciais. Mantive as mesmas 10.000 iterações pós-warm-up por cadeia do exercício 9, pensando no diagnóstico de Raftery-Lewis. Não usei thinning porque a autocorrelação é baixa (item g).
+:::
+
+### Resposta 10.d) Valores iniciais
+
+::: {.resposta}
+| Cadeia | $\eta$ inicial | $p$ inicial correspondente |
+|:---:|:---:|:---:|
+| 1 | -2 | $\frac{e^{-2}}{1 + e^{-2}} \approx 0,119$ |
+| 2 | 2 | $\frac{e^{2}}{1 + e^{2}} \approx 0,881$ |
+
+Escolhi valores bem afastados e em lados opostos de $\hat{p} \approx 0,60$: um representando uma população quase sem homozigose e o outro, uma população quase totalmente endogâmica.
+:::
+
+### Resposta 10.e) e 10.f) Trace plots
+
+```{r Resposta 10ef}
+#| fig-width: 10
+#| fig-height: 4.5
+
+par(mfrow = c(1, 2))
+coda::traceplot(mcmc10[, "eta"], col = c("violet", "steelblue"),
+                main = expression(paste("Trace plot de ", eta == logit(p))), ylab = expression(eta))
+coda::traceplot(mcmc10[, "p"], col = c("violet", "steelblue"),
+                main = "Trace plot de p", ylab = "p")
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 10ef warmup}
+#| fig-width: 7
+#| fig-height: 4.5
+
+arr10 <- rstan::extract(fit10, pars = "p", permuted = FALSE, inc_warmup = TRUE)
+# Valor inicial incluído como iteração 0 (p = inv_logit(-2) e inv_logit(2))
+cadeias10 <- rbind(plogis(c(-2, 2)), arr10[1:100, , 1])
+matplot(0:100, cadeias10, type = "l", lty = 1, lwd = 1.5, col = c("violet", "steelblue"),
+        xlab = "Iteração (warm-up)", ylab = "p", main = "Início do warm-up: saída dos valores iniciais")
+legend("topright", legend = c("Cadeia 1 (p inicial = 0,12)", "Cadeia 2 (p inicial = 0,88)"),
+       col = c("violet", "steelblue"), lty = 1, bty = "n")
+```
+
+::: {.resposta}
+No gráfico do warm-up, as duas cadeias saem de $p \approx 0,12$ e $p \approx 0,88$ e chegam em $p \approx 0,60$ em poucas iterações, mostrando que a informação dos dados é muito forte. Depois do warm-up:
+
+- **Estabilidade:** as cadeias oscilam em torno de $p \approx$ `r round(mean(as.matrix(mcmc10)[, "p"]), 4)`, sem tendência;
+- **Mistura:** as duas cadeias se sobrepõem totalmente, sem trechos parados;
+- **Exploração:** percorrem toda a amplitude da posteriori (que é bem estreita, da ordem de ± 0,004) repetidas vezes.
+
+Os trace plots de $\eta$ e $p$ têm o mesmo formato, pois a transformação logit é monótona e, num intervalo tão estreito, praticamente linear.
+:::
+
+### Resposta 10.g) Autocorrelação
+
+```{r Resposta 10g}
+#| fig-width: 10
+#| fig-height: 4.5
+
+par(mfrow = c(1, 2))
+acf(as.numeric(mcmc10[[1]][, "p"]), lag.max = 30, main = "p - Cadeia 1")
+acf(as.numeric(mcmc10[[2]][, "p"]), lag.max = 30, main = "p - Cadeia 2")
+par(mfrow = c(1, 1))
+```
+
+```{r Resposta 10g tabela}
+#| collapse: true
+#| comment: ""
+
+autocorr.diag(mcmc10, lags = c(1, 2, 5, 10))
+```
+
+::: {.resposta}
+A autocorrelação no lag 1 é moderada (≈ `r round(autocorr.diag(mcmc10, lags = 1)[1, "p"], 2)`) e cai para valores próximos de zero já nos primeiros lags, ficando dentro das bandas de significância. A dependência entre as amostras é fraca e de curta duração, então não foi preciso thinning. Todavia, poderia também ser tentado um thin = 5.
+:::
+
+### Resposta 10.h) Diagnósticos de convergência
+
+```{r Resposta 10h}
+#| collapse: true
+#| comment: ""
+
+sp10 <- get_sampler_params(fit10, inc_warmup = FALSE)
+cat("--- R-hat (Stan):", round(summary(fit10, pars = c("eta", "p"))$summary[, "Rhat"], 4), "\n")
+cat("--- Divergências:", sum(sapply(sp10, function(x) sum(x[, "divergent__"]))), "\n")
+cat("--- E-BFMI:", round(get_bfmi(fit10), 3), "\n\n")
+
+cat("--- Gelman-Rubin\n");         print(gelman.diag(mcmc10))
+cat("--- Geweke (escores Z)\n");   print(sapply(geweke.diag(mcmc10), function(g) g$z))
+cat("\n--- Heidelberger-Welch\n"); print(heidel.diag(mcmc10))
+cat("--- Raftery-Lewis\n");        print(raftery.diag(mcmc10))
+```
+
+::: {.resposta}
+- **Gelman-Rubin:** $\hat{R} =$ `r round(gelman.diag(mcmc10)$psrf["p", 1], 3)` para $p$ (limite superior ≈ 1), as duas cadeias convergiram para a mesma distribuição mesmo partindo de extremos opostos;
+- **Geweke:** todos os escores Z dentro de $(-1,96;\; 1,96)$, sem diferença entre o início e o fim das cadeias;
+- **Heidelberger-Welch:** todas as cadeias passaram nos testes de estacionariedade e de meia-amplitude;
+- **Raftery-Lewis:** fator de dependência baixo (< 5) e número de iterações sugerido (N) inferior às 10.000 utilizadas por cadeia;
+- **Diagnósticos do NUTS:** zero divergências e E-BFMI > 0,3 nas duas cadeias.
+
+Há evidência de convergência, e as amostras podem ser usadas para inferência.
+:::
+
+### Resposta 10.i) Tamanho Efetivo da Amostra (ESS)
+
+```{r Resposta 10i}
+#| collapse: true
+#| comment: ""
+
+n_total10 <- 2 * (n_iter10 - n_warmup10)
+ess10 <- effectiveSize(mcmc10)
+mcse10 <- apply(as.matrix(mcmc10), 2, sd) / sqrt(ess10)
+
+kable(data.frame(
+  Parametro = names(ess10),
+  N_total = n_total10,
+  ESS = ess10,
+  ESS_relativo = ess10 / n_total10,
+  MCSE = mcse10
+), digits = 6, row.names = FALSE)
+```
+
+::: {.resposta}
+O ESS de $p$ foi de `r round(ess10["p"])` em `r fmt(n_total10)` valores (≈ `r round(100 * ess10["p"] / n_total10)`%), o que equivale a milhares de amostras independentes. O MCSE da média de $p$ ficou na ordem de $10^{-5}$, desprezível frente ao desvio-padrão da posteriori. As estimativas têm precisão numérica mais do que suficiente.
+:::
+
+### Resposta 10.k) Estimativas a posteriori
+
+```{r Resposta 10k}
+#| collapse: true
+#| comment: ""
+
+p_post <- as.matrix(mcmc10)[, "p"]
+eta_post <- as.matrix(mcmc10)[, "eta"]
+
+res10_p <- resumo_post(p_post)
+res10_eta <- resumo_post(eta_post)
+
+# Comparação com a posteriori conjugada da Lista III (Beta(11, 9)) com os mesmos dados
+a10_conj <- soma_y10 + 11
+b10_conj <- N_sim * n_par - soma_y10 + 9
+exato10 <- c(Media = a10_conj / (a10_conj + b10_conj),
+             Mediana = qbeta(0.5, a10_conj, b10_conj),
+             Variancia = a10_conj * b10_conj / ((a10_conj + b10_conj)^2 * (a10_conj + b10_conj + 1)),
+             CV_perc = NA, IC_inf = qbeta(0.025, a10_conj, b10_conj),
+             IC_sup = qbeta(0.975, a10_conj, b10_conj),
+             HPD_inf = hdi(qbeta, 0.95, shape1 = a10_conj, shape2 = b10_conj)[1],
+             HPD_sup = hdi(qbeta, 0.95, shape1 = a10_conj, shape2 = b10_conj)[2])
+exato10["CV_perc"] <- 100 * sqrt(exato10["Variancia"]) / exato10["Media"]
+
+tabela10 <- rbind("p (MCMC - Logit-Normal)" = res10_p,
+                  "p (exato - conjugada Beta(11,9))" = exato10,
+                  "eta = logit(p) (MCMC)" = res10_eta)
+kable(tabela10, digits = 6)
+```
+
+::: {.resposta}
+Para o parâmetro de interesse $p$ (probabilidade de homozigose por loco):
+
+| Medida | Valor |
+|:---|:---:|
+| Média | `r round(res10_p["Media"], 5)` |
+| Mediana | `r round(res10_p["Mediana"], 5)` |
+| Variância | `r sprintf("%.3e", res10_p["Variancia"])` |
+| Coeficiente de variação | `r round(res10_p["CV_perc"], 3)`% |
+| IC 95% | [`r round(res10_p["IC_inf"], 4)`; `r round(res10_p["IC_sup"], 4)`] |
+| HPD 95% | [`r round(res10_p["HPD_inf"], 4)`; `r round(res10_p["HPD_sup"], 4)`] |
+
+Os resultados praticamente coincidem com os da posteriori conjugada Beta, o que era esperado, pois as duas prioris carregam a mesma informação e os 50.000 ensaios dominam a posteriori.
+:::
+
+### Resposta 10.j) Distribuições marginais a posteriori
+
+```{r Resposta 10j}
+#| fig-width: 10
+#| fig-height: 4.5
+
+par(mfrow = c(1, 2))
+
+hist(eta_post, breaks = 50, probability = TRUE, col = adjustcolor("pink", alpha.f = 0.7),
+     border = "white", main = expression(paste("Posteriori marginal de ", eta)),
+     xlab = expression(eta == logit(p)), ylab = "Densidade a posteriori")
+lines(density(eta_post), lwd = 2, col = "violet")
+abline(v = res10_eta[c("HPD_inf", "HPD_sup")], lty = 3, col = "steelblue", lwd = 1.5)
+
+hist(p_post, breaks = 50, probability = TRUE, col = adjustcolor("pink", alpha.f = 0.7),
+     border = "white", main = "Posteriori marginal de p",
+     xlab = "p", ylab = "Densidade a posteriori")
+lines(density(p_post), lwd = 2, col = "violet")
+curve(dbeta(x, a10_conj, b10_conj), add = TRUE, lwd = 2, lty = 2, col = "gray30")
+abline(v = res10_p[c("HPD_inf", "HPD_sup")], lty = 3, col = "steelblue", lwd = 1.5)
+legend("topright", legend = c("MCMC (kernel)", "Beta conjugada", "HPD 95%"),
+       col = c("violet", "gray30", "steelblue"), lty = c(1, 2, 3), lwd = 2, bty = "n", cex = 0.8)
+
+par(mfrow = c(1, 1))
+```
+
+### Resposta 10.k) Forma das distribuições marginais
+
+::: {.resposta}
+As duas marginais são **simétricas**, com formato de sino (praticamente Normais):
+
+- média e mediana praticamente iguais: `r round(res10_p["Media"], 5)` e `r round(res10_p["Mediana"], 5)` para $p$;
+- IC de caudas iguais e HPD praticamente coincidem (diferem apenas na quarta casa decimal);
+- o histograma acompanha bem a curva da Beta conjugada.
+
+Isso acontece porque, com 50.000 ensaios, a posteriori fica muito concentrada e, pelo comportamento assintótico (a posteriori se aproxima de uma Normal quando $n$ é grande), qualquer assimetria desaparece. Em princípio, a Logit-Normal seria assimétrica na escala de $p$ quando concentrada perto de 0 ou de 1, mas aqui a posteriori está concentrada em uma faixa muito estreita em torno de 0,60, onde a transformação logit é quase linear.
+:::
+
+### Resposta 10.l) Por que a priori não conjugada dificulta a solução analítica
+
+::: {.resposta}
+Escrevendo a posteriori de $\eta$ passo a passo:
+
+**Verossimilhança** (com $p = \frac{e^\eta}{1 + e^\eta}$ e $1 - p = \frac{1}{1 + e^\eta}$):
+
+$$L(\eta \mid y) \propto p^{\sum y_i}(1 - p)^{nm - \sum y_i} = \left(\frac{e^\eta}{1 + e^\eta}\right)^{\sum y_i}\left(\frac{1}{1 + e^\eta}\right)^{nm - \sum y_i}$$
+
+$$L(\eta \mid y) \propto \frac{e^{\eta \sum y_i}}{(1 + e^\eta)^{nm}}$$
+
+**Priori:**
+
+$$\pi(\eta) \propto \exp\left\{-\frac{(\eta - \mu_0)^2}{2\sigma_0^2}\right\}$$
+
+**Posteriori:**
+
+$$\pi(\eta \mid y) \propto \frac{\exp\left\{\eta\sum y_i - \frac{(\eta - \mu_0)^2}{2\sigma_0^2}\right\}}{(1 + e^\eta)^{nm}}$$
+
+Esse núcleo **não pertence a nenhuma família conhecida**. O termo $(1 + e^\eta)^{-nm}$ não pode ser combinado com o núcleo Normal $e^{-(\eta - \mu_0)^2/2\sigma_0^2}$ para formar uma Normal (nem outra distribuição tabelada). Para ter a posteriori completa, seria preciso calcular a constante de normalização:
+
+$$\pi(y) = \int_{-\infty}^{+\infty} \frac{\exp\left\{\eta\sum y_i - \frac{(\eta - \mu_0)^2}{2\sigma_0^2}\right\}}{(1 + e^\eta)^{nm}}\,d\eta$$
+
+Essa integral **não tem solução analítica**. O mesmo vale para $E(\eta \mid y)$, $V(\eta \mid y)$ e os quantis, que dependem de integrais desse mesmo tipo. Já na Lista III, com a priori Beta, os expoentes de $p$ e $(1-p)$ simplesmente se somavam e a posteriori era uma Beta.
+
+**Por que usar MCMC:** os algoritmos MCMC (Metropolis-Hastings, HMC/NUTS) só precisam da posteriori **a menos de uma constante**, pois $\pi(y)$ se cancela na razão de aceitação. Assim, basta avaliar o numerador acima (no Stan, o log dele) para gerar uma cadeia cuja distribuição estacionária é $\pi(\eta \mid y)$. A partir das amostras, obtemos qualquer quantidade de interesse (média, mediana, variância, intervalos, a distribuição de $p = \text{logit}^{-1}(\eta)$) sem nunca resolver a integral. Além disso, se o modelo fosse ampliado (por exemplo, com efeitos de linhagem e de geração na escala logit), a integração analítica ficaria ainda mais inviável, enquanto o MCMC continuaria funcionando da mesma forma.
+:::

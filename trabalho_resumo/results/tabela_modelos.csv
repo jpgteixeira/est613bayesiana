@@ -1,0 +1,8 @@
+"modelo","acerto_perc","trocas_medias","atraso_medio","perc_nao_detectado"
+"M0",66.4,0.58,0.43,48.1
+"M1_maior_prob",68.6,1.02,0.86,30.9
+"M1_limiar",67.9,0.62,0.7,38.3
+"M2_maior_prob",84.7,0.6,0.52,30.9
+"M2_limiar",82.8,0.36,0.84,39.5
+"M2hc_limiar",82.7,0.35,0.75,40.7
+"M2ing_limiar",82.4,0.35,0.65,35.8
